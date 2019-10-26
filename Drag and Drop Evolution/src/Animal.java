@@ -12,7 +12,7 @@ public class Animal {
 	Animal(PApplet pro){
 		x = (int) pro.random(0, pro.width);
 		y = (int) pro.random(0, pro.height);
-		radius = 30;
+		radius = 35;
 	}
 	
 	void draw() {
