@@ -1,22 +1,36 @@
 import processing.core.PApplet;
+import java.util.*;
 
 public class Main extends PApplet {
 
 	public static void main(String[] args) {
 		PApplet.main("Main");
-
 	}
+	
+	ArrayList<Animal> animals = new ArrayList<Animal>();
 	
 	public void settings() {
 		fullScreen();
+		width = displayWidth;
+		height = displayHeight;
 	}
 	
 	public void setup() {
 		background(0);
+		for(int i = 0; i < 100; i++) {
+			animals.add(new Animal(this));
+		}
+			
+		
+		setGradient(0, 0, width, height, color(160, 160, 160), color(10, 50, 255), Y_AXIS);
+
 	}
 	
+	
 	public void draw() {
-		setGradient(0, 0, width, height, color(60, 60, 60), color(10, 50, 255), Y_AXIS);
+		for (Animal an : animals) {
+			an.show();
+		}
 		
 	}
 	
