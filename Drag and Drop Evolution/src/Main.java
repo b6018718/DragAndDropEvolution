@@ -18,26 +18,27 @@ public class Main extends PApplet {
 	public void setup() {
 		background(0);
 		for(int i = 0; i < 100; i++) {
-			animals.add(new Animal(this));
+			animals.add(new Animal(this, i, animals));
 		}
-			
-		
+		drawBackground();
+	}
+	
+	public void drawBackground() {
 		setGradient(0, 0, width, height, color(160, 160, 160), color(10, 50, 255), Y_AXIS);
-
 	}
 	
 	
 	public void draw() {
-		for (Animal an : animals) {
+		drawBackground();
+		for(int i = animals.size()-1; i >= 0; i--) {
+			Animal an = animals.get(i);
+			an.move(animals);
 			an.show();
+			an.checkIfDead(animals, i);
 		}
-		
 	}
 	
-
 	
-	// Code from:
-	//
 	// Constants
 	int Y_AXIS = 1;
 	int X_AXIS = 2;
