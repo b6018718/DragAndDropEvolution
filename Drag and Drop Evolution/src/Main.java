@@ -8,6 +8,8 @@ public class Main extends PApplet {
 	}
 	
 	ArrayList<Animal> animals = new ArrayList<Animal>();
+	ArrayList<Food> foodArray = new ArrayList<Food>();
+	int frameCount = 0;
 	
 	public void settings() {
 		fullScreen();
@@ -35,6 +37,25 @@ public class Main extends PApplet {
 			an.move(animals);
 			an.show();
 			an.checkIfDead(animals, i);
+			an.eatFood(foodArray);
+		}
+		
+		showFood();
+	}
+	
+	void showFood() {
+		frameCount--;
+		if(frameCount < 0) {
+			// Produce food
+			frameCount = 60;
+			for (int i = 0; i < 20; i++) {
+				foodArray.add(new Food(this, animals));
+			}
+		}
+		
+		for (int i = 0; i < foodArray.size(); i++) {
+			Food food = foodArray.get(i);
+			food.show();
 		}
 	}
 	

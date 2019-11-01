@@ -14,7 +14,7 @@ public class Animal {
 	int stepsToMove;
 	int movementSpeed;
 	int id;
-	int framesTillDeath;
+	int bouncesTillDeath;
 	
 	class Color{
 		int r;
@@ -50,7 +50,7 @@ public class Animal {
 		movementSpeed = 8;
 		
 		// Survival
-		framesTillDeath = (int) pro.random(1, 20);
+		bouncesTillDeath = (int) pro.random(1, 20);
 		setNewRadius();
 	}
 	
@@ -73,18 +73,16 @@ public class Animal {
 		}
 		isOutOfBounds();
 
-
 		stepsToMove--;
-		
 	}
 	
 	private void setNewRadius() {
-		radius = standardSize * framesTillDeath/10;
+		radius = standardSize * bouncesTillDeath/10;
 		diameter = radius * 2;
 	}
 	
 	private void shrinkSize() {
-		framesTillDeath--;
+		bouncesTillDeath--;
 		setNewRadius();
 		adjustAngle();
 	}
@@ -101,12 +99,12 @@ public class Animal {
 	}
 	
 	public void checkIfDead(ArrayList <Animal> animals, int i) {
-		if(framesTillDeath < 0) {
+		if(bouncesTillDeath < 0) {
 			animals.remove(i);
 		}
 	}
 	
-	private boolean collideWithAnimal(ArrayList <Animal> animals, int aimX, int aimY) {
+	public boolean collideWithAnimal(ArrayList <Animal> animals, int aimX, int aimY) {
 		for (int i = 0; i < animals.size(); i++) {
 			if(animals.get(i).id != id) {
 				// Find the distance between circles
@@ -163,5 +161,19 @@ public class Animal {
 		return (int) pro.random(0, 360);
 	}
 	
+	public void eatFood(ArrayList <Food> foodArray) {
+		for (int i = 0; i < foodArray.size(); i++) {
+			// Find the distance between circles
+			int dx = foodArray.get(i).x - x;
+			int dy = foodArray.get(i).y - y;
+			float distance = PApplet.sqrt(dx * dx + dy * dy);
+			float minDist = foodArray.get(i).radius + radius;
+			if(distance < minDist) {
+				foodArray.remove(i);
+				bouncesTillDeath = bouncesTillDeath + 3;
+				setNewRadius();
+			}
+		}
+	}
 	
 }
