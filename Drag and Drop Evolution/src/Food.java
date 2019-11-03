@@ -21,7 +21,7 @@ public class Food {
 		do {
 			aimX = (int) pro.random(0, pro.width - radius);
 			aimY = (int) pro.random(0, pro.height - radius);
-			if(animals.size() > 0 && !(collideWithAnimal(animals, aimX, aimY))) {
+			if(animals.size() < 0 || !(collideWithAnimal(animals, aimX, aimY))) {
 				notFound = false;
 			}
 		} while(notFound || attempts <= 0);
@@ -39,8 +39,8 @@ public class Food {
 	private boolean collideWithAnimal(ArrayList <Animal> animals, int aimX, int aimY) {
 		for (int i = 0; i < animals.size(); i++) {
 			// Find the distance between circles
-			int dx = animals.get(i).x - aimX;
-			int dy = animals.get(i).y - aimY;
+			float dx = animals.get(i).x - aimX;
+			float dy = animals.get(i).y - aimY;
 			float distance = PApplet.sqrt(dx * dx + dy * dy);
 			float minDist = animals.get(i).radius + radius;
 			if(distance < minDist) {

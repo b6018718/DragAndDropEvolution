@@ -4,15 +4,15 @@ import processing.core.PApplet;
 
 public class Animal {
 	// Properties
-	int x;
-	int y;
+	float x;
+	float y;
 	float radius;
 	float standardSize;
 	float diameter;
 	Color colour = new Color();
 	int direction;
 	int stepsToMove;
-	int movementSpeed;
+	float movementSpeed;
 	int id;
 	int bouncesTillDeath;
 	
@@ -30,15 +30,25 @@ public class Animal {
 		pro = parent;
 		this.id = id;
 		// Set the attributes
-		radius = (int) 24;
+		radius = getPixelsFromPercentWidth(5);
 		diameter = radius * 2;
 		standardSize = radius;
 		
+		// Survival
+		bouncesTillDeath = 20;
+		setNewRadius();
+		int placeAttempts = 20;
 		
 		do {
-			x = (int) pro.random(0 + radius, pro.width - radius);
-			y = (int) pro.random(0 + radius, pro.height - radius);
-		} while (collideWithAnimal(animals, x, y));
+			x = pro.random(0 + radius, pro.width - radius);
+			y = pro.random(0 + radius, pro.height - radius);
+			placeAttempts--;
+			if(placeAttempts < 0) {
+				bouncesTillDeath--;
+				setNewRadius();
+				placeAttempts = 20;
+			}
+		} while (collideWithAnimal(animals, x, y) && bouncesTillDeath > 0);
 		
 		// Set random colour
 		colour.r = (int) pro.random(0, 255);
@@ -47,11 +57,12 @@ public class Animal {
 		
 		// Movement
 		stepsToMove = 0;
-		movementSpeed = 8;
-		
-		// Survival
-		bouncesTillDeath = (int) pro.random(1, 20);
-		setNewRadius();
+		movementSpeed = 130;
+		direction = getRandomAngle();
+	}
+	
+	float getPixelsFromPercentWidth(float percentOfScreenWidth) {
+		return pro.width * (percentOfScreenWidth / 100);
 	}
 	
 	void show() {
@@ -60,15 +71,21 @@ public class Animal {
 		pro.circle(x, y, diameter);
 	}
 	
-	void move(ArrayList <Animal> animals) {		
+	void move(ArrayList <Animal> animals, float deltaTime) {
 		setDirection();
-		int aimX = (int) (x + movementSpeed * PApplet.sin(direction));
-		int aimY = (int) (y + movementSpeed * PApplet.cos(direction));
 		
-		if(!(collideWithAnimal(animals, aimX, aimY))) {
-			x = aimX;
-			y = aimY;
-		} else {
+		//Time based animation
+		float movementWithDelta = movementSpeed * deltaTime;
+		
+		// Frame based animation
+		//float movementWithDelta = movementSpeed * 0.1f;
+		float aimX = x + movementWithDelta * PApplet.sin(direction);
+		float aimY = y + movementWithDelta * PApplet.cos(direction);
+		
+		x = aimX;
+		y = aimY;
+		
+		if(collideWithAnimal(animals, aimX, aimY)) {
 			shrinkSize();
 		}
 		isOutOfBounds();
@@ -77,7 +94,13 @@ public class Animal {
 	}
 	
 	private void setNewRadius() {
-		radius = standardSize * bouncesTillDeath/10;
+		float tempRadius = standardSize * bouncesTillDeath/15;
+		if (tempRadius * 2 > pro.height) {
+			radius = pro.height/2;
+			bouncesTillDeath = bouncesTillDeath - 3;
+		} else {
+			radius = standardSize * bouncesTillDeath/15;
+		}
 		diameter = radius * 2;
 	}
 	
@@ -93,8 +116,14 @@ public class Animal {
 			direction += 10;
 		else
 			direction -= 10;
+		fixDirection();
+	}
+	
+	private void fixDirection() {
 		if(direction > 360) {
 			direction = direction - 360;
+		} else if(direction < 0) {
+			direction = 360 - direction;
 		}
 	}
 	
@@ -104,12 +133,12 @@ public class Animal {
 		}
 	}
 	
-	public boolean collideWithAnimal(ArrayList <Animal> animals, int aimX, int aimY) {
+	public boolean collideWithAnimal(ArrayList <Animal> animals, float aimX, float aimY) {
 		for (int i = 0; i < animals.size(); i++) {
 			if(animals.get(i).id != id) {
 				// Find the distance between circles
-				int dx = animals.get(i).x - aimX;
-				int dy = animals.get(i).y - aimY;
+				float dx = animals.get(i).x - aimX;
+				float dy = animals.get(i).y - aimY;
 				float distance = PApplet.sqrt(dx * dx + dy * dy);
 				float minDist = animals.get(i).radius + radius;
 				if(distance < minDist) {
@@ -122,38 +151,43 @@ public class Animal {
 	
 	private void setDirection() {
 		if(stepsToMove < 1) {
-			changeDirection();
+			//changeDirection();
 		}
 	}
 	
 	private void isOutOfBounds() {
+		boolean needsShrinking = false;
 		if(x + radius > pro.width) {
 			x = pro.width - (int) radius;
 			stepsToMove = stepsToMove - 100;
-			shrinkSize();
+			needsShrinking = true;
 		}
 			
 		if(x - radius < 0) {
-			x = (int) radius;
+			x = radius;
 			stepsToMove = stepsToMove - 100;
-			shrinkSize();
+			needsShrinking = true;
 		}
 		
 		if(y + radius > pro.height) {
-			y = pro.height - (int) radius;
+			y = pro.height - radius;
 			stepsToMove = stepsToMove - 100;
-			shrinkSize();
+			needsShrinking = true;
 		}
 		
 		if(y - radius < 0) {
-			y = (int) radius;
+			y = radius;
 			stepsToMove = stepsToMove - 100;
-			shrinkSize();
+			needsShrinking = true;
 		}
+		
+		if(needsShrinking)
+			shrinkSize();
 	}
 	
 	private void changeDirection() {
-		stepsToMove = (int) pro.random(1, 200);
+		//stepsToMove = (int) pro.random(1, 200);
+		stepsToMove = 10000;
 		direction = getRandomAngle();
 	}
 	
@@ -164,8 +198,8 @@ public class Animal {
 	public void eatFood(ArrayList <Food> foodArray) {
 		for (int i = 0; i < foodArray.size(); i++) {
 			// Find the distance between circles
-			int dx = foodArray.get(i).x - x;
-			int dy = foodArray.get(i).y - y;
+			float dx = foodArray.get(i).x - x;
+			float dy = foodArray.get(i).y - y;
 			float distance = PApplet.sqrt(dx * dx + dy * dy);
 			float minDist = foodArray.get(i).radius + radius;
 			if(distance < minDist) {
