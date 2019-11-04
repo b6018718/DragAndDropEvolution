@@ -1,21 +1,28 @@
 import processing.core.PApplet;
 import java.util.*;
-//import org.gicentre.utils.geom.*;
+import org.gicentre.utils.geom.*;
 import org.gicentre.utils.FrameTimer;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 0.2";
+	String versionNumber = "Alpha 0.3";
 	
 	FrameTimer timer;
 	// Animation frames
 	int lastMillis = millis();
 	// Food timer starting point (ms)
 	int secondCounter = 2000;
+	// Starting population animal count
+	int numOfAnimals = 250;
 	// Delta upper and lower limits
 	float LOW_LIMIT = 0.0167f; 	// 10 fps
 	float HIGH_LIMIT = 0.1f; 	// 60 fps
-	// Use fullscreen mode
+	// Boolean variables
 	boolean gameFullScreen = false;
+	boolean useHashGrid = false;
+	// Hashgrid
+	HashGrid<EnvironmentObject> hashGrid;
+	float maxObjectSize = 15f;
+	int foodPerEvent = 0;
 
 	public static void main(String[] args) {
 		PApplet.main( new String[] { "Main" } );
@@ -42,12 +49,20 @@ public class Main extends PApplet {
 	}
 	
 	public void setup() {
+		// Create a hash grid
+		if(useHashGrid) {
+			hashGrid = new HashGrid<EnvironmentObject>(width, height, maxObjectSize * 2);
+		}
+		// Set the window name
 		surface.setTitle(versionNumber);
 		// Create the frame rate timer, reports every 60 frames
 		timer = new FrameTimer(0, 1);
 		// Create the animals
-		for(int i = 0; i < 30; i++) {
-			animals.add(new Animal(this, i, animals));
+		for(int i = 0; i < numOfAnimals; i++) {
+			animals.add(new Animal(this, i, animals, maxObjectSize));
+			if(useHashGrid) {
+				hashGrid.add(animals.get(animals.size() -1));
+			}
 		}
 		frameRate(60);
 		drawBackground();
@@ -78,11 +93,18 @@ public class Main extends PApplet {
 		
 		for(int i = animals.size()-1; i >= 0; i--) {
 			Animal an = animals.get(i);
-			
-			an.move(animals, deltaTime);
 			an.show();
-			an.eatFood(foodArray);
-			an.checkIfDead(animals, i);
+			if(useHashGrid) {
+				an.moveWithHashGrid(hashGrid, deltaTime);
+				an.eatFoodWithHashGrid(hashGrid, foodArray);
+				if(an.checkIfDead(animals, i)) {
+					hashGrid.remove(an);
+				}
+			} else {
+				an.move(animals, deltaTime);
+				an.eatFood(foodArray);
+				an.checkIfDead(animals, i);
+			}
 		}
 		
 		showFood();
@@ -91,6 +113,8 @@ public class Main extends PApplet {
 		// Update counters
 		secondCounter += lastLoopTime;
 		lastMillis = currentMillis;
+		if(useHashGrid)
+			hashGrid.updateAll();
 	}
 	
 	public void showFPS() {
@@ -104,10 +128,14 @@ public class Main extends PApplet {
 	
 	void showFood() {
 		if(secondCounter > 2000) {
+			//System.out.println(timer.getFrameRate());
 			// Produce food
 			secondCounter = 0;
-			for (int i = 0; i < 20; i++) {
+			for (int i = 0; i < foodPerEvent; i++) {
 				foodArray.add(new Food(this, animals));
+				if(useHashGrid) {
+					hashGrid.add(foodArray.get(foodArray.size() - 1));
+				}
 			}
 		}
 		

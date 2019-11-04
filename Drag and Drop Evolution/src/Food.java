@@ -2,9 +2,7 @@ import java.util.ArrayList;
 
 import processing.core.PApplet;
 
-public class Food {
-	int x;
-	int y;
+public class Food extends EnvironmentObject {
 	int radius;
 	int diameter;
 	PApplet pro;
@@ -27,20 +25,24 @@ public class Food {
 		} while(notFound || attempts <= 0);
 		
 		if(notFound) {
-			x = -1;
-			y = -1;
+			super.position.x = -1;
+			super.position.y = -1;
 		} else {
-			x = aimX;
-			y = aimY;
+			super.position.x = aimX;
+			super.position.y = aimY;
 		}
 		
+		
+		colour.r = 0;
+		colour.g = 190;
+		colour.b = 0;
 	}
 	
 	private boolean collideWithAnimal(ArrayList <Animal> animals, int aimX, int aimY) {
 		for (int i = 0; i < animals.size(); i++) {
 			// Find the distance between circles
-			float dx = animals.get(i).x - aimX;
-			float dy = animals.get(i).y - aimY;
+			float dx = animals.get(i).position.x - aimX;
+			float dy = animals.get(i).position.y - aimY;
 			float distance = PApplet.sqrt(dx * dx + dy * dy);
 			float minDist = animals.get(i).radius + radius;
 			if(distance < minDist) {
@@ -53,6 +55,6 @@ public class Food {
 	public void show() {
 		pro.fill(0, 190, 10);
 		pro.stroke(0);
-		pro.circle(x, y, diameter);
+		pro.circle(super.position.x, super.position.y, diameter);
 	}
 }
