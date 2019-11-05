@@ -6,19 +6,21 @@ public class Food extends EnvironmentObject {
 	int radius;
 	int diameter;
 	PApplet pro;
+	RectObj env;
 	
-	Food(PApplet parent, ArrayList <Animal> animals){
+	Food(PApplet parent, ArrayList <Animal> animals, RectObj env){
 		radius = 5;
 		diameter = radius * 2;
 		pro = parent;
+		this.env = env;
 		
 		int attempts = 20;
 		boolean notFound = true;
 		int aimX;
 		int aimY;
 		do {
-			aimX = (int) pro.random(0, pro.width - radius);
-			aimY = (int) pro.random(0, pro.height - radius);
+			aimX = (int) pro.random(env.x, env.topX - radius);
+			aimY = (int) pro.random(env.y, env.topY - radius);
 			if(animals.size() < 0 || !(collideWithAnimal(animals, aimX, aimY))) {
 				notFound = false;
 			}

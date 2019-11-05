@@ -19,15 +19,18 @@ public class Animal extends EnvironmentObject {
 	float maxObjectSize;
 	boolean keepTurning = false;
 	float coinToss;
+	RectObj env;
 	
 	// This processor object allows us to access Processor methods outside of the main class
 	PApplet pro;
 	
-	Animal(PApplet parent, int id, ArrayList <Animal> animals, float maxObjectSize){
+	Animal(PApplet parent, ArrayList <Animal> animals, float maxObjectSize, RectObj env){
 		// Add the processing applet into the class
 		pro = parent;
-		this.id = id;
+		this.env = env;
+
 		// Set the attributes
+		this.id = animals.size();
 		radius = getPixelsFromPercentWidth(5);
 		diameter = radius * 2;
 		standardSize = radius;
@@ -39,8 +42,8 @@ public class Animal extends EnvironmentObject {
 		int placeAttempts = 20;
 		
 		do {
-			super.position.x = pro.random(0 + radius, pro.width - radius);
-			super.position.y = pro.random(0 + radius, pro.height - radius);
+			super.position.x = pro.random(env.x + radius, env.topX - radius);
+			super.position.y = pro.random(env.y + radius, env.topY - radius);
 			placeAttempts--;
 			if(placeAttempts < 0) {
 				bouncesTillDeath--;
@@ -62,7 +65,7 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	float getPixelsFromPercentWidth(float percentOfScreenWidth) {
-		return pro.width * (percentOfScreenWidth / 100);
+		return env.width * (percentOfScreenWidth / 100);
 	}
 	
 	void show() {
@@ -116,8 +119,11 @@ public class Animal extends EnvironmentObject {
 	
 	private void setNewRadius() {
 		float tempRadius = standardSize * bouncesTillDeath/15;
-		if (tempRadius * 2 > pro.height) {
-			radius = pro.height/2;
+		if (tempRadius * 2 > env.topY || tempRadius * 2 > env.topX) {
+			if(env.width > env.height)
+				radius = env.height/2;
+			else
+				radius = env.width/2;
 			bouncesTillDeath = bouncesTillDeath - 3;
 		} else {
 			radius = standardSize * bouncesTillDeath/15;
@@ -208,26 +214,26 @@ public class Animal extends EnvironmentObject {
 	
 	private void isOutOfBounds() {
 		boolean needsShrinking = false;
-		if(super.position.x + radius > pro.width) {
-			super.position.x = pro.width - (int) radius;
+		if(super.position.x + radius > env.topX) {
+			super.position.x = env.topX - radius;
 			stepsToMove = stepsToMove - 100;
 			needsShrinking = true;
 		}
 			
-		if(super.position.x - radius < 0) {
-			super.position.x = radius;
+		if(super.position.x - radius < env.x) {
+			super.position.x = env.x + radius;
 			stepsToMove = stepsToMove - 100;
 			needsShrinking = true;
 		}
 		
-		if(super.position.y + radius > pro.height) {
-			super.position.y = pro.height - radius;
+		if(super.position.y + radius > env.topY) {
+			super.position.y = env.topY - radius;
 			stepsToMove = stepsToMove - 100;
 			needsShrinking = true;
 		}
 		
-		if(super.position.y - radius < 0) {
-			super.position.y = radius;
+		if(super.position.y - radius < env.y) {
+			super.position.y = env.y + radius;
 			stepsToMove = stepsToMove - 100;
 			needsShrinking = true;
 		}
@@ -276,7 +282,6 @@ public class Animal extends EnvironmentObject {
 					hashGrid.remove(food);
 				}
 			}
-			
 		}
 	}
 	

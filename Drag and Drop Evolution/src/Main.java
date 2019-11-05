@@ -1,39 +1,41 @@
 import processing.core.PApplet;
-import java.util.*;
-import org.gicentre.utils.geom.*;
+import processing.core.PVector;
+
+import java.util.ArrayList;
 import org.gicentre.utils.FrameTimer;
+import org.gicentre.utils.stat.XYChart;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 0.3";
+	String versionNumber = "Alpha 0.4";
+	
+	// Screen dimensions
+	int scWidth;
+	int scHeight;
 	
 	FrameTimer timer;
 	// Animation frames
 	int lastMillis = millis();
-	// Food timer starting point (ms)
-	int secondCounter = 2000;
-	// Starting population animal count
-	int numOfAnimals = 250;
+	int millisCount = 0;
+	boolean secondPassedFrame = false;
+	String fps = "";
 	// Delta upper and lower limits
 	float LOW_LIMIT = 0.0167f; 	// 10 fps
 	float HIGH_LIMIT = 0.1f; 	// 60 fps
 	// Boolean variables
 	boolean gameFullScreen = false;
-	boolean useHashGrid = false;
-	// Hashgrid
-	HashGrid<EnvironmentObject> hashGrid;
-	float maxObjectSize = 15f;
-	int foodPerEvent = 0;
+	// Environment
+	Environment env;
+	// Graph
+	XYChart lineChart;
+	ArrayList <PVector> fpsArray = new ArrayList<PVector>();
+	float secondCount = 0;
+	RectObj chartRect;
 
 	public static void main(String[] args) {
 		PApplet.main( new String[] { "Main" } );
 	}
 	
-	ArrayList<Animal> animals = new ArrayList<Animal>();
-	ArrayList<Food> foodArray = new ArrayList<Food>();
-	
 	public void settings() {
-		int scWidth;
-		int scHeight;
 		if(gameFullScreen) {
 			fullScreen();
 			scWidth = displayWidth;
@@ -43,27 +45,43 @@ public class Main extends PApplet {
 			scHeight = 480;
 			size(scWidth, scHeight);
 		}
-
-		width = scWidth;
-		height = scHeight;
+		
+		// 0.2 is 20% offset
+		double offset = 0.2;
+		
+		int envX = (int) (scWidth * 0);
+		int envY = (int) (scHeight * offset);
+		int envHeight = (int) (scHeight * (1 - offset));
+		int envWidth = (int) (scWidth * (1 - offset));
+		
+		RectObj envArea = new RectObj(envX, envY, envWidth, envHeight);
+		env = new Environment(this, envArea);
 	}
 	
 	public void setup() {
-		// Create a hash grid
-		if(useHashGrid) {
-			hashGrid = new HashGrid<EnvironmentObject>(width, height, maxObjectSize * 2);
-		}
 		// Set the window name
 		surface.setTitle(versionNumber);
 		// Create the frame rate timer, reports every 60 frames
 		timer = new FrameTimer(0, 1);
-		// Create the animals
-		for(int i = 0; i < numOfAnimals; i++) {
-			animals.add(new Animal(this, i, animals, maxObjectSize));
-			if(useHashGrid) {
-				hashGrid.add(animals.get(animals.size() -1));
-			}
-		}
+		// Create the chart
+		lineChart = new XYChart(this);
+		lineChart.showYAxis(true);
+		lineChart.setAxisValuesColour(color(0,0,0,0));
+		lineChart.setAxisColour(color(0,0,0,0));
+		lineChart.setPointColour(color(0,0,0,0));
+		lineChart.setPointSize(0);
+		lineChart.setLineColour(color(255, 0, 0));
+		lineChart.setMaxY(60);
+		lineChart.setMinY(0);
+		lineChart.setLineWidth(2);
+		//lineChart
+		float chartX = (float) (scWidth * 0.8);
+		float chartY = (float) (scHeight * 0.2);
+		float chartWidth = (float) (scWidth * 0.2);
+		float chartHeight = (float) (scHeight * 0.7);
+		chartRect = new RectObj(chartX, chartY, chartWidth, chartHeight);
+		
+		
 		frameRate(60);
 		drawBackground();
 	}
@@ -87,61 +105,54 @@ public class Main extends PApplet {
 		timer.update();
 		int lastLoopTime = currentMillis - lastMillis;
 		float deltaTime = getDeltaTime(lastLoopTime);
+		millisCount += lastLoopTime;
+		if(millisCount > 1000) {
+			secondPassedFrame = true;
+			millisCount = 0;
+			secondCount++;
+		}
 		
 		// Drawing functions
 		drawBackground();
+		env.draw(deltaTime, lastLoopTime);
 		
-		for(int i = animals.size()-1; i >= 0; i--) {
-			Animal an = animals.get(i);
-			an.show();
-			if(useHashGrid) {
-				an.moveWithHashGrid(hashGrid, deltaTime);
-				an.eatFoodWithHashGrid(hashGrid, foodArray);
-				if(an.checkIfDead(animals, i)) {
-					hashGrid.remove(an);
-				}
-			} else {
-				an.move(animals, deltaTime);
-				an.eatFood(foodArray);
-				an.checkIfDead(animals, i);
-			}
-		}
+		// Draw Text
+		String numOfAnimalsString = "Number of objects: " + env.animals.size();
+		textSize(scWidth/30);
+		fill(0,0,0);
+		text(numOfAnimalsString, (float) (scWidth * 0.05), (float) (scHeight * 0.08));
 		
-		showFood();
+		// Draw framerate
 		showFPS();
 		
-		// Update counters
-		secondCounter += lastLoopTime;
+		// Show charts
+		showCharts();
+		
 		lastMillis = currentMillis;
-		if(useHashGrid)
-			hashGrid.updateAll();
+		secondPassedFrame = false;
+	}
+	
+	public void showCharts() {
+		fill(255);
+		rect(chartRect.x, chartRect.y, chartRect.width, chartRect.height + 10);
+		textSize(10);
+		lineChart.draw(chartRect.x, chartRect.y, chartRect.width, chartRect.height);
 	}
 	
 	public void showFPS() {
 		fill(0, 160);
-		String fps = timer.getFrameRateAsText();
 		if (fps.length()>0){
-			textSize(18);
-		    text(fps+" fps", (float) (width * 0.8), (float) (height * 0.05));
+			textSize(scWidth/30);
+			fill(0, 0, 0);
+		    text(fps+" fps", (float) (scWidth * 0.8), (float) (scHeight * 0.08));
 		}
-	}
-	
-	void showFood() {
-		if(secondCounter > 2000) {
-			//System.out.println(timer.getFrameRate());
-			// Produce food
-			secondCounter = 0;
-			for (int i = 0; i < foodPerEvent; i++) {
-				foodArray.add(new Food(this, animals));
-				if(useHashGrid) {
-					hashGrid.add(foodArray.get(foodArray.size() - 1));
-				}
-			}
-		}
-		
-		for (int i = 0; i < foodArray.size(); i++) {
-			Food food = foodArray.get(i);
-			food.show();
+		// Add to the chart array
+		if(secondPassedFrame) {
+			PVector graphNode = new PVector(secondCount, timer.getFrameRate());
+			fpsArray.add(graphNode);
+			lineChart.setData(fpsArray);
+			env.addAnimal();
+			fps = timer.getFrameRateAsText();
 		}
 	}
 	
@@ -149,9 +160,7 @@ public class Main extends PApplet {
 	int Y_AXIS = 1;
 	int X_AXIS = 2;
 	void setGradient(int x, int y, float w, float h, int c1, int c2, int axis ) {
-
 		  noFill();
-
 		  if (axis == Y_AXIS) {  // Top to bottom gradient
 		    for (int i = y; i <= y+h; i++) {
 		      float inter = map(i, y, y+h, 0, 1);
@@ -166,8 +175,8 @@ public class Main extends PApplet {
 		      int c = lerpColor(c1, c2, inter);
 		      stroke(c);
 		      line(i, y, i, y+h);
-		    } 
+		      } 
 		  }
-		}
+	}
 
 }
