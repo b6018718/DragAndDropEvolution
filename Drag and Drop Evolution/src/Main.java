@@ -6,7 +6,7 @@ import org.gicentre.utils.FrameTimer;
 import org.gicentre.utils.stat.XYChart;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 0.5";
+	String versionNumber = "Alpha 0.6";
 	
 	// Screen dimensions
 	int scWidth;
@@ -25,6 +25,13 @@ public class Main extends PApplet {
 	boolean gameFullScreen = false;
 	// Environment
 	Environment env;
+//	Environment env2;
+//	Environment env3;
+//	Environment env4;
+//	Environment env5;
+//	Environment env6;
+//	Environment env7;
+//	Environment env8;
 	// Graph
 	XYChart lineChart;
 	ArrayList <PVector> fpsArray = new ArrayList<PVector>();
@@ -56,6 +63,30 @@ public class Main extends PApplet {
 		
 		RectObj envArea = new RectObj(envX, envY, envWidth, envHeight);
 		env = new Environment(this, envArea);
+		
+//		float envX = (float) (scWidth * 0);
+//		float envY = (float) (scHeight * offset);
+//		float envHeight = (float) (scHeight * (0.4));
+//		float envWidth = (float) (scWidth * (0.2));
+//		RectObj envArea = new RectObj(envX, envY, envWidth, envHeight);
+//		env = new Environment(this, envArea);
+//		envX = (float) (scWidth * 0.2);
+//		env2 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
+//		envX = (float) (scWidth * 0.4);
+//		env3 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
+//		envX = (float) (scWidth * 0.6);
+//		env4 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
+//		envX = (float) (scWidth * 0);
+//		envY = (float) (scHeight * (offset + 0.4));
+//		env5 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
+//		envX = (float) (scWidth * 0.2);
+//		env6 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
+//		envX = (float) (scWidth * 0.4);
+//		env7 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
+//		envX = (float) (scWidth * 0.6);
+//		env8 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
+		
+		
 	}
 	
 	public void setup() {
@@ -116,6 +147,13 @@ public class Main extends PApplet {
 		// Drawing functions
 		drawBackground();
 		env.draw(deltaTime, lastLoopTime);
+//		env2.draw(deltaTime, lastLoopTime);
+//		env3.draw(deltaTime, lastLoopTime);
+//		env4.draw(deltaTime, lastLoopTime);
+//		env5.draw(deltaTime, lastLoopTime);
+//		env6.draw(deltaTime, lastLoopTime);
+//		env7.draw(deltaTime, lastLoopTime);
+//		env8.draw(deltaTime, lastLoopTime);
 		
 		// Draw Text
 		String numOfAnimalsString = "Number of objects: " + env.animals.size();

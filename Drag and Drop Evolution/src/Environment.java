@@ -11,7 +11,7 @@ public class Environment {
 	// Environment dimensions
 	int x, y, width, height;
 	// Starting population animal count
-	int numOfAnimals = 3000;
+	int numOfAnimals = 100;
 	// Max size of animals
 	float maxObjectSize = 3f;
 	// Amount of food
@@ -44,9 +44,12 @@ public class Environment {
 	}
 	
 	void draw(float deltaTime, int lastLoopTime) {
+		//pro.stroke(0);
+		//pro.rect(env.x, env.y, env.width, env.height);
+		
 		for(int i = animals.size()-1; i >= 0; i--) {
 			Animal an = animals.get(i);
-			//an.show();
+			an.show();
 			if(useHashGrid) {
 				// Moving and eating are both contained in the function below for efficiency
 				an.moveWithHashGrid(hashGrid, deltaTime, foodArray);
