@@ -11,13 +11,13 @@ public class Environment {
 	// Environment dimensions
 	int x, y, width, height;
 	// Starting population animal count
-	int numOfAnimals = 0;
+	int numOfAnimals = 3000;
 	// Max size of animals
-	float maxObjectSize = 15f;
+	float maxObjectSize = 3f;
 	// Amount of food
 	int foodPerEvent = 0;
 	// How long between food generation
-	int foodCounter = 2000;
+	int foodCounter = 10;
 	// Use a hash grid
 	boolean useHashGrid = true;
 	// Hashgrid
@@ -46,10 +46,10 @@ public class Environment {
 	void draw(float deltaTime, int lastLoopTime) {
 		for(int i = animals.size()-1; i >= 0; i--) {
 			Animal an = animals.get(i);
-			an.show();
+			//an.show();
 			if(useHashGrid) {
-				an.moveWithHashGrid(hashGrid, deltaTime);
-				an.eatFoodWithHashGrid(hashGrid, foodArray);
+				// Moving and eating are both contained in the function below for efficiency
+				an.moveWithHashGrid(hashGrid, deltaTime, foodArray);
 				if(an.checkIfDead(animals, i)) {
 					hashGrid.remove(an);
 				}

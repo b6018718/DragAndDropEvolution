@@ -1,19 +1,17 @@
 import java.util.ArrayList;
 
 import processing.core.PApplet;
+import processing.core.PVector;
 
 public class Food extends EnvironmentObject {
-	int radius;
-	int diameter;
-	PApplet pro;
-	RectObj env;
-	
+	// Constructor
 	Food(PApplet parent, ArrayList <Animal> animals, RectObj env){
+		// Call the parent constructor
+		super(parent, env);
 		radius = 5;
 		diameter = radius * 2;
-		pro = parent;
-		this.env = env;
 		
+		// Find a random position for the object
 		int attempts = 20;
 		boolean notFound = true;
 		int aimX;
@@ -26,15 +24,17 @@ public class Food extends EnvironmentObject {
 			}
 		} while(notFound || attempts <= 0);
 		
+		// Set the position
+		PVector position = new PVector();
 		if(notFound) {
-			super.position.x = -1;
-			super.position.y = -1;
+			position.x = -1;
+			position.y = -1;
 		} else {
-			super.position.x = aimX;
-			super.position.y = aimY;
+			position.x = aimX;
+			position.y = aimY;
 		}
 		
-		
+		// Set the colour
 		colour.r = 0;
 		colour.g = 190;
 		colour.b = 0;
@@ -52,11 +52,5 @@ public class Food extends EnvironmentObject {
 			}
 		}
 		return false;
-	}
-	
-	public void show() {
-		pro.fill(0, 190, 10);
-		pro.stroke(0);
-		pro.circle(super.position.x, super.position.y, diameter);
 	}
 }

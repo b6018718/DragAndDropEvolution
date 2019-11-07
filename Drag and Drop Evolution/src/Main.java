@@ -6,7 +6,7 @@ import org.gicentre.utils.FrameTimer;
 import org.gicentre.utils.stat.XYChart;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 0.4";
+	String versionNumber = "Alpha 0.5";
 	
 	// Screen dimensions
 	int scWidth;
@@ -66,6 +66,7 @@ public class Main extends PApplet {
 		// Create the chart
 		lineChart = new XYChart(this);
 		lineChart.showYAxis(true);
+		lineChart.showXAxis(true);
 		lineChart.setAxisValuesColour(color(0,0,0,0));
 		lineChart.setAxisColour(color(0,0,0,0));
 		lineChart.setPointColour(color(0,0,0,0));
@@ -151,7 +152,7 @@ public class Main extends PApplet {
 			PVector graphNode = new PVector(secondCount, timer.getFrameRate());
 			fpsArray.add(graphNode);
 			lineChart.setData(fpsArray);
-			env.addAnimal();
+			//env.addAnimal();
 			fps = timer.getFrameRateAsText();
 		}
 	}

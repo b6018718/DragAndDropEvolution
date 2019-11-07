@@ -8,9 +8,7 @@ import java.util.Set;
 
 public class Animal extends EnvironmentObject {
 	// Properties
-	float radius;
 	float standardSize;
-	float diameter;
 	int direction;
 	int stepsToMove;
 	float movementSpeed;
@@ -19,15 +17,13 @@ public class Animal extends EnvironmentObject {
 	float maxObjectSize;
 	boolean keepTurning = false;
 	float coinToss;
-	RectObj env;
 	
 	// This processor object allows us to access Processor methods outside of the main class
-	PApplet pro;
+	//PApplet pro;
 	
 	Animal(PApplet parent, ArrayList <Animal> animals, float maxObjectSize, RectObj env){
 		// Add the processing applet into the class
-		pro = parent;
-		this.env = env;
+		super(parent, env);
 
 		// Set the attributes
 		this.id = animals.size();
@@ -42,21 +38,21 @@ public class Animal extends EnvironmentObject {
 		int placeAttempts = 20;
 		
 		do {
-			super.position.x = pro.random(env.x + radius, env.topX - radius);
-			super.position.y = pro.random(env.y + radius, env.topY - radius);
+			position.x = pro.random(env.x + radius, env.topX - radius);
+			position.y = pro.random(env.y + radius, env.topY - radius);
 			placeAttempts--;
 			if(placeAttempts < 0) {
 				bouncesTillDeath--;
 				setNewRadius();
 				placeAttempts = 20;
 			}
-		} while (collideWithAnimal(animals, super.position) && bouncesTillDeath > 0);
+		} while (collideWithAnimal(animals, position) && bouncesTillDeath > 0);
 		
 		
 		// Set random colour
-		super.colour.r = (int) pro.random(0, 255);
-		super.colour.g = (int) pro.random(0, 255);
-		super.colour.b = (int) pro.random(0, 255);
+		colour.r = (int) pro.random(0, 255);
+		colour.g = (int) pro.random(0, 255);
+		colour.b = (int) pro.random(0, 255);
 		
 		// Movement
 		stepsToMove = 0;
@@ -66,12 +62,6 @@ public class Animal extends EnvironmentObject {
 	
 	float getPixelsFromPercentWidth(float percentOfScreenWidth) {
 		return env.width * (percentOfScreenWidth / 100);
-	}
-	
-	void show() {
-		pro.fill(colour.r, colour.g, colour.b);
-		pro.stroke(0);
-		pro.circle(super.position.x, super.position.y, diameter);
 	}
 	
 	void move(ArrayList <Animal> animals, float deltaTime) {
@@ -86,9 +76,9 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	
-	void moveWithHashGrid(HashGrid<EnvironmentObject> hashGrid, float deltaTime) {
+	void moveWithHashGrid(HashGrid<EnvironmentObject> hashGrid, float deltaTime, ArrayList <Food> foodArray) {
 		PVector aimVector = getAimVector(deltaTime);
-		if(collideWithAnimalHashGrid(hashGrid, aimVector)) {
+		if(collideWithAnimalHashGrid(hashGrid, aimVector, foodArray)) {
 			shrinkSize();
 		} else {
 			setAimVectorAsLocation(aimVector);
@@ -103,16 +93,16 @@ public class Animal extends EnvironmentObject {
 		
 		// Frame based animation
 		//float movementWithDelta = movementSpeed * 0.1f;
-		float aimX = super.position.x + movementWithDelta * PApplet.sin(direction);
-		float aimY = super.position.y + movementWithDelta * PApplet.cos(direction);
+		float aimX = position.x + movementWithDelta * PApplet.sin(direction);
+		float aimY = position.y + movementWithDelta * PApplet.cos(direction);
 		
 		return new PVector(aimX, aimY);
 	}
 	
 	void setAimVectorAsLocation(PVector aimVector) {
 		keepTurning = false;
-		super.position.x = aimVector.x;
-		super.position.y = aimVector.y;
+		position.x = aimVector.x;
+		position.y = aimVector.y;
 	}
 	
 	
@@ -186,11 +176,11 @@ public class Animal extends EnvironmentObject {
 		return false;
 	}
 	
-	public boolean collideWithAnimalHashGrid(HashGrid<EnvironmentObject> hashGrid, PVector collidePos) {
+	public boolean collideWithAnimalHashGrid(HashGrid<EnvironmentObject> hashGrid, PVector collidePos, ArrayList <Food> foodArray) {
 		Set<EnvironmentObject> objectsInRange = hashGrid.get(collidePos);
 		for(EnvironmentObject obj : objectsInRange) {
 			if(obj instanceof Animal) {
-				Animal animal = (Animal)obj;
+				Animal animal = (Animal)obj;				
 				if(animal.id != id) {
 					// Find the distance between circles
 					float dx = animal.position.x - collidePos.x;
@@ -200,6 +190,12 @@ public class Animal extends EnvironmentObject {
 					if(distance < minDist) {
 						return true;
 					}
+				}
+			} else if(obj instanceof Food) {
+				// Cast object to the food type, for type safety
+				Food food = (Food)obj;
+				if(checkIfCollideWithFood(food, foodArray)) {
+					hashGrid.remove(food);
 				}
 			}
 		}
@@ -214,26 +210,26 @@ public class Animal extends EnvironmentObject {
 	
 	private void isOutOfBounds() {
 		boolean needsShrinking = false;
-		if(super.position.x + radius > env.topX) {
-			super.position.x = env.topX - radius;
+		if(position.x + radius > env.topX) {
+			position.x = env.topX - radius;
 			stepsToMove = stepsToMove - 100;
 			needsShrinking = true;
 		}
 			
-		if(super.position.x - radius < env.x) {
-			super.position.x = env.x + radius;
+		if(position.x - radius < env.x) {
+			position.x = env.x + radius;
 			stepsToMove = stepsToMove - 100;
 			needsShrinking = true;
 		}
 		
-		if(super.position.y + radius > env.topY) {
-			super.position.y = env.topY - radius;
+		if(position.y + radius > env.topY) {
+			position.y = env.topY - radius;
 			stepsToMove = stepsToMove - 100;
 			needsShrinking = true;
 		}
 		
-		if(super.position.y - radius < env.y) {
-			super.position.y = env.y + radius;
+		if(position.y - radius < env.y) {
+			position.y = env.y + radius;
 			stepsToMove = stepsToMove - 100;
 			needsShrinking = true;
 		}
@@ -259,8 +255,8 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	private boolean checkIfCollideWithFood(Food food, ArrayList <Food> foodArray) {
-		float dx = food.position.x - super.position.x;
-		float dy = food.position.y - super.position.y;
+		float dx = food.position.x - position.x;
+		float dy = food.position.y - position.y;
 		float distance = PApplet.sqrt(dx * dx + dy * dy);
 		float minDist = food.radius + radius;
 		if(distance < minDist) {
@@ -270,19 +266,6 @@ public class Animal extends EnvironmentObject {
 			return true;
 		}
 		return false;
-	}
-	
-	public void eatFoodWithHashGrid(HashGrid <EnvironmentObject> hashGrid, ArrayList <Food> foodArray) {
-		Set<EnvironmentObject> objectsInRange = hashGrid.get(position);
-		for(EnvironmentObject obj : objectsInRange) {
-			if(obj instanceof Food) {
-				// Cast object to the food type, for type safety
-				Food food = (Food)obj;
-				if(checkIfCollideWithFood(food, foodArray)) {
-					hashGrid.remove(food);
-				}
-			}
-		}
 	}
 	
 	
