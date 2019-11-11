@@ -1,8 +1,11 @@
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.gicentre.utils.geom.HashGrid;
 
 import processing.core.PApplet;
+import processing.core.PVector;
 
 public class Environment {
 	// Processing applet
@@ -11,13 +14,15 @@ public class Environment {
 	// Environment dimensions
 	int x, y, width, height;
 	// Starting population animal count
-	int numOfAnimals = 100;
+	int numOfAnimals = 10;
 	// Max size of animals
-	float maxObjectSize = 3f;
+	float maxObjectSize = 10f;
 	// Amount of food
-	int foodPerEvent = 0;
-	// How long between food generation
-	int foodCounter = 10;
+	int foodPerEvent = 5;
+	// Ms per food event
+	float msPerFoodEvent = 4000;
+	// Counter to track time till next food spawn
+	int foodCounter = 0;
 	// Use a hash grid
 	boolean useHashGrid = true;
 	// Hashgrid
@@ -45,22 +50,16 @@ public class Environment {
 	
 	void draw(float deltaTime, int lastLoopTime) {
 		//pro.stroke(0);
-		//pro.rect(env.x, env.y, env.width, env.height);
+		pro.fill(153, 255, 51, 190);
+		pro.noStroke();
+		pro.rect(env.x, env.y, env.width, env.height);
+		
 		
 		for(int i = animals.size()-1; i >= 0; i--) {
 			Animal an = animals.get(i);
 			an.show();
-			if(useHashGrid) {
-				// Moving and eating are both contained in the function below for efficiency
-				an.moveWithHashGrid(hashGrid, deltaTime, foodArray);
-				if(an.checkIfDead(animals, i)) {
-					hashGrid.remove(an);
-				}
-			} else {
-				an.move(animals, deltaTime);
-				an.eatFood(foodArray);
-				an.checkIfDead(animals, i);
-			}
+			an.move(deltaTime);
+			an.checkIfDead(lastLoopTime);
 		}
 		
 		// Draw the food onto the environment
@@ -74,12 +73,12 @@ public class Environment {
 	}
 	
 	void showFood() {
-		if(foodCounter > 2000) {
+		if(foodCounter > msPerFoodEvent) {
 			//System.out.println(timer.getFrameRate());
 			// Produce food
 			foodCounter = 0;
 			for (int i = 0; i < foodPerEvent; i++) {
-				foodArray.add(new Food(pro, animals, env));
+				foodArray.add(new Food(pro, animals, foodArray, env, hashGrid, null));
 				if(useHashGrid) {
 					hashGrid.add(foodArray.get(foodArray.size() - 1));
 				}
@@ -93,9 +92,52 @@ public class Environment {
 	}
 	
 	void addAnimal() {
-		animals.add(new Animal(pro, animals, maxObjectSize, env));
+		animals.add(new Animal(pro, animals, foodArray, maxObjectSize, env, hashGrid));
 		if(useHashGrid) {
 			hashGrid.add(animals.get(animals.size() -1));
+		}
+	}
+	
+	void clickOnEnv(PVector mouse) {
+		if(hashGrid != null) {
+			System.out.println(checkForCollisions(mouse, null));
+		} else {
+			System.out.println(checkForCollisions(mouse, animals));
+		}
+	}
+	
+	private boolean checkForCollisions(PVector collidePos, ArrayList<? extends EnvironmentObject> arrList) {
+		Set<EnvironmentObject> objectsInRange;
+		if(hashGrid != null) {
+			objectsInRange = hashGrid.get(collidePos);
+		} else {
+			objectsInRange = new HashSet<EnvironmentObject>(arrList);
+		}
+		
+		for(EnvironmentObject obj : objectsInRange) {
+			if(obj instanceof Animal) {
+				Animal animal = (Animal)obj;				
+				if(collisionAABB(animal, collidePos)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	protected boolean collisionAABB(EnvironmentObject obj, PVector aimPos) {
+		if(obj.position.x <= aimPos.x + width && obj.position.x + obj.width >= aimPos.x) { // X Collision
+			if(obj.position.y <= aimPos.y + width && obj.position.y + obj.width >= aimPos.y) { // Y Collision
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public void speedUpDouble() {
+		msPerFoodEvent = msPerFoodEvent / 2;
+		for (Animal an : animals) {
+			an.speedMultiplier = 2;
 		}
 	}
 }

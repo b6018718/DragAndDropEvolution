@@ -1,4 +1,5 @@
 import processing.core.PApplet;
+import processing.core.PImage;
 import processing.core.PVector;
 
 import java.util.ArrayList;
@@ -6,7 +7,7 @@ import org.gicentre.utils.FrameTimer;
 import org.gicentre.utils.stat.XYChart;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 0.6";
+	String versionNumber = "Alpha 0.7";
 	
 	// Screen dimensions
 	int scWidth;
@@ -23,20 +24,19 @@ public class Main extends PApplet {
 	float HIGH_LIMIT = 0.1f; 	// 60 fps
 	// Boolean variables
 	boolean gameFullScreen = false;
+	boolean showFPSGraph = false;
 	// Environment
 	Environment env;
-//	Environment env2;
-//	Environment env3;
-//	Environment env4;
-//	Environment env5;
-//	Environment env6;
-//	Environment env7;
-//	Environment env8;
+	UI userInterface;
+
 	// Graph
-	XYChart lineChart;
+	XYChart fpsChart;
 	ArrayList <PVector> fpsArray = new ArrayList<PVector>();
 	float secondCount = 0;
-	RectObj chartRect;
+	RectObj fpsRect;
+	
+	// Images
+	PImage speedUpImg;
 
 	public static void main(String[] args) {
 		PApplet.main( new String[] { "Main" } );
@@ -44,7 +44,7 @@ public class Main extends PApplet {
 	
 	public void settings() {
 		if(gameFullScreen) {
-			fullScreen();
+			fullScreen(P2D);
 			scWidth = displayWidth;
 			scHeight = displayHeight;
 		} else {
@@ -64,29 +64,6 @@ public class Main extends PApplet {
 		RectObj envArea = new RectObj(envX, envY, envWidth, envHeight);
 		env = new Environment(this, envArea);
 		
-//		float envX = (float) (scWidth * 0);
-//		float envY = (float) (scHeight * offset);
-//		float envHeight = (float) (scHeight * (0.4));
-//		float envWidth = (float) (scWidth * (0.2));
-//		RectObj envArea = new RectObj(envX, envY, envWidth, envHeight);
-//		env = new Environment(this, envArea);
-//		envX = (float) (scWidth * 0.2);
-//		env2 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
-//		envX = (float) (scWidth * 0.4);
-//		env3 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
-//		envX = (float) (scWidth * 0.6);
-//		env4 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
-//		envX = (float) (scWidth * 0);
-//		envY = (float) (scHeight * (offset + 0.4));
-//		env5 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
-//		envX = (float) (scWidth * 0.2);
-//		env6 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
-//		envX = (float) (scWidth * 0.4);
-//		env7 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
-//		envX = (float) (scWidth * 0.6);
-//		env8 = new Environment(this, new RectObj(envX, envY, envWidth, envHeight));
-		
-		
 	}
 	
 	public void setup() {
@@ -95,24 +72,26 @@ public class Main extends PApplet {
 		// Create the frame rate timer, reports every 60 frames
 		timer = new FrameTimer(0, 1);
 		// Create the chart
-		lineChart = new XYChart(this);
-		lineChart.showYAxis(true);
-		lineChart.showXAxis(true);
-		lineChart.setAxisValuesColour(color(0,0,0,0));
-		lineChart.setAxisColour(color(0,0,0,0));
-		lineChart.setPointColour(color(0,0,0,0));
-		lineChart.setPointSize(0);
-		lineChart.setLineColour(color(255, 0, 0));
-		lineChart.setMaxY(60);
-		lineChart.setMinY(0);
-		lineChart.setLineWidth(2);
+		fpsChart = new XYChart(this);
+		fpsChart.showYAxis(true);
+		fpsChart.showXAxis(true);
+		fpsChart.setAxisValuesColour(color(0,0,0,0));
+		fpsChart.setAxisColour(color(0,0,0,0));
+		fpsChart.setPointColour(color(0,0,0,0));
+		fpsChart.setPointSize(0);
+		fpsChart.setLineColour(color(255, 0, 0));
+		fpsChart.setMaxY(60);
+		fpsChart.setMinY(0);
+		fpsChart.setLineWidth(2);
 		//lineChart
 		float chartX = (float) (scWidth * 0.8);
 		float chartY = (float) (scHeight * 0.2);
 		float chartWidth = (float) (scWidth * 0.2);
 		float chartHeight = (float) (scHeight * 0.7);
-		chartRect = new RectObj(chartX, chartY, chartWidth, chartHeight);
+		fpsRect = new RectObj(chartX, chartY, chartWidth, chartHeight);
 		
+		// Load images
+		userInterface = new UI(this, env);
 		
 		frameRate(60);
 		drawBackground();
@@ -147,13 +126,7 @@ public class Main extends PApplet {
 		// Drawing functions
 		drawBackground();
 		env.draw(deltaTime, lastLoopTime);
-//		env2.draw(deltaTime, lastLoopTime);
-//		env3.draw(deltaTime, lastLoopTime);
-//		env4.draw(deltaTime, lastLoopTime);
-//		env5.draw(deltaTime, lastLoopTime);
-//		env6.draw(deltaTime, lastLoopTime);
-//		env7.draw(deltaTime, lastLoopTime);
-//		env8.draw(deltaTime, lastLoopTime);
+		userInterface.display();
 		
 		// Draw Text
 		String numOfAnimalsString = "Number of objects: " + env.animals.size();
@@ -171,11 +144,26 @@ public class Main extends PApplet {
 		secondPassedFrame = false;
 	}
 	
+	public void keyPressed() {
+		if (key == 'f' || key == 'F')
+			showFPSGraph = !showFPSGraph;
+	}
+	
+	public void mousePressed() {
+		// Loop through the environments looking for creatures
+		PVector mouse = new PVector(mouseX, mouseY);
+		env.clickOnEnv(mouse);
+		userInterface.checkCollisions(mouse);
+	}
+	
 	public void showCharts() {
-		fill(255);
-		rect(chartRect.x, chartRect.y, chartRect.width, chartRect.height + 10);
-		textSize(10);
-		lineChart.draw(chartRect.x, chartRect.y, chartRect.width, chartRect.height);
+		//noStroke
+		//fill(255, 255, 255, 50);
+		//rect(chartRect.x, chartRect.y, chartRect.width, chartRect.height + 10);
+		if(showFPSGraph) {
+			textSize(10);
+			fpsChart.draw(fpsRect.x, fpsRect.y, fpsRect.width, fpsRect.height);
+		}
 	}
 	
 	public void showFPS() {
@@ -189,7 +177,7 @@ public class Main extends PApplet {
 		if(secondPassedFrame) {
 			PVector graphNode = new PVector(secondCount, timer.getFrameRate());
 			fpsArray.add(graphNode);
-			lineChart.setData(fpsArray);
+			fpsChart.setData(fpsArray);
 			//env.addAnimal();
 			fps = timer.getFrameRateAsText();
 		}

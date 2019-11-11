@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import org.gicentre.utils.geom.HashGrid;
 
@@ -12,41 +13,45 @@ public class Animal extends EnvironmentObject {
 	int direction;
 	int stepsToMove;
 	float movementSpeed;
+	float startingMovementSpeed;
 	int id;
-	int bouncesTillDeath;
 	float maxObjectSize;
 	boolean keepTurning = false;
 	float coinToss;
+	float startingLifeSpan = 60000;
+	float startingTimeTillStarve;
+	float timeTillStarve;
+	float lifeSpanInMs = startingLifeSpan;
+	float startDyingPercentageOfLife = 0.2f;
+	float whenGetHungryMs = 1000;
+	boolean isDead = false;
+	float speedMultiplier = 1;
 	
 	// This processor object allows us to access Processor methods outside of the main class
 	//PApplet pro;
 	
-	Animal(PApplet parent, ArrayList <Animal> animals, float maxObjectSize, RectObj env){
+	Animal(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, float maxObjectSize, RectObj env, HashGrid<EnvironmentObject> hashGrid){
 		// Add the processing applet into the class
-		super(parent, env);
+		super(parent, env, animals, foodArray, hashGrid);
 
 		// Set the attributes
 		this.id = animals.size();
-		radius = getPixelsFromPercentWidth(5);
-		diameter = radius * 2;
-		standardSize = radius;
+		//width = getPixelsFromPercentWidth(5);
+		width = maxObjectSize;
 		this.maxObjectSize = maxObjectSize;
 		
 		// Survival
-		bouncesTillDeath = 20;
-		setNewRadius();
 		int placeAttempts = 20;
 		
 		do {
-			position.x = pro.random(env.x + radius, env.topX - radius);
-			position.y = pro.random(env.y + radius, env.topY - radius);
+			position.x = pro.random(env.x, env.topX - width);
+			position.y = pro.random(env.y, env.topY - width);
 			placeAttempts--;
 			if(placeAttempts < 0) {
-				bouncesTillDeath--;
-				setNewRadius();
 				placeAttempts = 20;
+				width--;
 			}
-		} while (collideWithAnimal(animals, position) && bouncesTillDeath > 0);
+		} while (collide(position) && width > 0);
 		
 		
 		// Set random colour
@@ -57,29 +62,20 @@ public class Animal extends EnvironmentObject {
 		// Movement
 		stepsToMove = 0;
 		movementSpeed = 130;
+		startingMovementSpeed = movementSpeed;
 		direction = getRandomAngle();
+		startingTimeTillStarve = 150000 * (1/width);
+		timeTillStarve = startingTimeTillStarve;
 	}
 	
 	float getPixelsFromPercentWidth(float percentOfScreenWidth) {
 		return env.width * (percentOfScreenWidth / 100);
 	}
 	
-	void move(ArrayList <Animal> animals, float deltaTime) {
+	void move(float deltaTime) {
 		PVector aimVector = getAimVector(deltaTime);
-		if(collideWithAnimal(animals, aimVector)) {
-			shrinkSize();
-		} else {
-			setAimVectorAsLocation(aimVector);
-		}
-		isOutOfBounds();
-		stepsToMove--;
-	}
-	
-	
-	void moveWithHashGrid(HashGrid<EnvironmentObject> hashGrid, float deltaTime, ArrayList <Food> foodArray) {
-		PVector aimVector = getAimVector(deltaTime);
-		if(collideWithAnimalHashGrid(hashGrid, aimVector, foodArray)) {
-			shrinkSize();
+		if(collide(aimVector)) {
+			adjustAngle();
 		} else {
 			setAimVectorAsLocation(aimVector);
 		}
@@ -89,10 +85,9 @@ public class Animal extends EnvironmentObject {
 	
 	private PVector getAimVector(float deltaTime) {		
 		//Time based animation
-		float movementWithDelta = movementSpeed * deltaTime;
+		float movementWithDelta = movementSpeed * deltaTime * speedMultiplier;
 		
 		// Frame based animation
-		//float movementWithDelta = movementSpeed * 0.1f;
 		float aimX = position.x + movementWithDelta * PApplet.sin(direction);
 		float aimY = position.y + movementWithDelta * PApplet.cos(direction);
 		
@@ -103,34 +98,6 @@ public class Animal extends EnvironmentObject {
 		keepTurning = false;
 		position.x = aimVector.x;
 		position.y = aimVector.y;
-	}
-	
-	
-	
-	private void setNewRadius() {
-		float tempRadius = standardSize * bouncesTillDeath/15;
-		if (tempRadius * 2 > env.topY || tempRadius * 2 > env.topX) {
-			if(env.width > env.height)
-				radius = env.height/2;
-			else
-				radius = env.width/2;
-			bouncesTillDeath = bouncesTillDeath - 3;
-		} else {
-			radius = standardSize * bouncesTillDeath/15;
-		}
-		diameter = radius * 2;
-		
-		// Check if exceeds size limit
-		if(diameter > maxObjectSize) {
-			diameter = maxObjectSize;
-			radius = maxObjectSize / 2;
-		}
-	}
-	
-	private void shrinkSize() {
-		//bouncesTillDeath--;
-		//setNewRadius();
-		adjustAngle();
 	}
 	
 	public void adjustAngle() {
@@ -152,122 +119,156 @@ public class Animal extends EnvironmentObject {
 		}
 	}
 	
-	public boolean checkIfDead(ArrayList <Animal> animals, int i) {
-		if(bouncesTillDeath < 0) {
-			animals.remove(i);
+	public boolean checkIfDead(float lastLoopTime) {
+		
+		lastLoopTime = lastLoopTime * speedMultiplier;
+		
+		lifeSpanInMs = lifeSpanInMs - lastLoopTime;
+		timeTillStarve = timeTillStarve - lastLoopTime;
+		
+		float lifeRemaining = lifeSpanInMs / startingLifeSpan;
+		// Elderly check
+		if(lifeRemaining < startDyingPercentageOfLife && lifeSpanInMs > 0) {
+			// Creature starts dying so calculate the speed reduction
+			float movementMultiplier = lifeRemaining / startDyingPercentageOfLife;
+			movementSpeed = startingMovementSpeed * movementMultiplier;
+		}
+		
+		// Compost check
+		if(lifeSpanInMs < -2000) {
+			removeFromEnvironment();
+		}
+		
+		// Hungry check
+		if(timeTillStarve < whenGetHungryMs) {
+			movementSpeed = startingMovementSpeed * (timeTillStarve / whenGetHungryMs);
+		}
+		
+		// Starve check
+		if(timeTillStarve < 0 && lifeSpanInMs > 0) {
+			lifeSpanInMs = 0;
+			die();
+		}
+			
+		// Old age death check
+		if(lifeSpanInMs < 0) {
+			// remove from hash grid and the array list if you want to get rid of
+			die();
 			return true;
 		}
+			
+		
+		//Animal is still alive
 		return false;
 	}
 	
-	public boolean collideWithAnimal(ArrayList <Animal> animals, PVector aimVector) {
-		for (int i = 0; i < animals.size(); i++) {
-			if(animals.get(i).id != id) {
-				// Find the distance between circles
-				float dx = animals.get(i).position.x - aimVector.x;
-				float dy = animals.get(i).position.y - aimVector.y;
-				float distance = PApplet.sqrt(dx * dx + dy * dy);
-				float minDist = animals.get(i).radius + radius;
-				if(distance < minDist) {
-					return true;
-				}
-			}
+	public void die() {
+		movementSpeed = 0;
+		isDead = true;
+	}
+	
+	public void removeFromEnvironment() {
+		removeAnimalFromArray();
+		addFoodAtDeathLocation();
+	}
+	
+	private void removeAnimalFromArray() {
+		if(hashGrid != null)
+			hashGrid.remove(this);
+		animals.remove(this);
+	}
+	
+	private void addFoodAtDeathLocation() {
+		foodArray.add(new Food(pro, animals, foodArray, env, hashGrid, position));
+		if(hashGrid != null) {
+			hashGrid.add(foodArray.get(foodArray.size() - 1));
+		}
+	}
+	
+	private boolean collide(PVector collidePos) {
+		if(hashGrid != null) {
+			return checkForCollisions(collidePos, null);
+		} else {
+			if(checkForCollisions(collidePos, animals))
+				return true;
+			checkForCollisions(collidePos, foodArray);
 		}
 		return false;
 	}
-	
-	public boolean collideWithAnimalHashGrid(HashGrid<EnvironmentObject> hashGrid, PVector collidePos, ArrayList <Food> foodArray) {
-		Set<EnvironmentObject> objectsInRange = hashGrid.get(collidePos);
+
+	private boolean checkForCollisions(PVector collidePos, ArrayList<? extends EnvironmentObject> arrList) {
+		Set<EnvironmentObject> objectsInRange;
+		if(hashGrid != null) {
+			objectsInRange = hashGrid.get(collidePos);
+		} else {
+			objectsInRange = new HashSet<EnvironmentObject>(arrList);
+		}
+		
 		for(EnvironmentObject obj : objectsInRange) {
 			if(obj instanceof Animal) {
 				Animal animal = (Animal)obj;				
 				if(animal.id != id) {
-					// Find the distance between circles
-					float dx = animal.position.x - collidePos.x;
-					float dy = animal.position.y - collidePos.y;
-					float distance = PApplet.sqrt(dx * dx + dy * dy);
-					float minDist = animal.radius + radius;
-					if(distance < minDist) {
+					if(collisionAABB(animal, collidePos)) {
 						return true;
 					}
 				}
 			} else if(obj instanceof Food) {
 				// Cast object to the food type, for type safety
-				Food food = (Food)obj;
-				if(checkIfCollideWithFood(food, foodArray)) {
-					hashGrid.remove(food);
+				Food food = (Food) obj;
+				if(collisionAABB(food, collidePos)) {
+					eat(food, hashGrid);
 				}
 			}
 		}
 		return false;
 	}
 	
-	private void setDirection() {
-		if(stepsToMove < 1) {
-			//changeDirection();
+	public void eat(Food food, HashGrid<EnvironmentObject> hashGrid) {
+		timeTillStarve += food.width * 1000;
+		if(timeTillStarve > startingTimeTillStarve) {
+			timeTillStarve = startingTimeTillStarve;
+			movementSpeed = startingMovementSpeed;
+		}
+		foodArray.remove(food);
+		if(hashGrid != null) {
+			hashGrid.remove(food);
 		}
 	}
 	
 	private void isOutOfBounds() {
-		boolean needsShrinking = false;
-		if(position.x + radius > env.topX) {
-			position.x = env.topX - radius;
+		boolean hitSide = false;
+		
+		if(position.x + width > env.topX) {
+			position.x = env.topX - width;
 			stepsToMove = stepsToMove - 100;
-			needsShrinking = true;
+			hitSide = true;
 		}
 			
-		if(position.x - radius < env.x) {
-			position.x = env.x + radius;
+		if(position.x < env.x) {
+			position.x = env.x;
 			stepsToMove = stepsToMove - 100;
-			needsShrinking = true;
+			hitSide = true;
 		}
 		
-		if(position.y + radius > env.topY) {
-			position.y = env.topY - radius;
+		if(position.y + width > env.topY) {
+			position.y = env.topY - width;
 			stepsToMove = stepsToMove - 100;
-			needsShrinking = true;
+			hitSide = true;
 		}
 		
-		if(position.y - radius < env.y) {
-			position.y = env.y + radius;
+		if(position.y < env.y) {
+			position.y = env.y;
 			stepsToMove = stepsToMove - 100;
-			needsShrinking = true;
+			hitSide = true;
 		}
 		
-		if(needsShrinking)
-			shrinkSize();
-	}
-	
-	private void changeDirection() {
-		//stepsToMove = (int) pro.random(1, 200);
-		stepsToMove = 10000;
-		direction = getRandomAngle();
+		if(hitSide)
+			adjustAngle();
+		
 	}
 	
 	public int getRandomAngle() {
 		return (int) pro.random(0, 360);
 	}
-	
-	public void eatFood(ArrayList <Food> foodArray) {
-		for (int i = 0; i < foodArray.size(); i++) {
-			checkIfCollideWithFood(foodArray.get(i), foodArray);
-		}
-	}
-	
-	private boolean checkIfCollideWithFood(Food food, ArrayList <Food> foodArray) {
-		float dx = food.position.x - position.x;
-		float dy = food.position.y - position.y;
-		float distance = PApplet.sqrt(dx * dx + dy * dy);
-		float minDist = food.radius + radius;
-		if(distance < minDist) {
-			foodArray.remove(food);
-			bouncesTillDeath = bouncesTillDeath + 3;
-			setNewRadius();
-			return true;
-		}
-		return false;
-	}
-	
-	
 	
 }

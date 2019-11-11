@@ -1,37 +1,22 @@
 import java.util.ArrayList;
 
+import org.gicentre.utils.geom.HashGrid;
+
 import processing.core.PApplet;
 import processing.core.PVector;
 
 public class Food extends EnvironmentObject {
 	// Constructor
-	Food(PApplet parent, ArrayList <Animal> animals, RectObj env){
+	Food(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, RectObj env, HashGrid<EnvironmentObject> hashGrid, PVector startingLoc){
 		// Call the parent constructor
-		super(parent, env);
-		radius = 5;
-		diameter = radius * 2;
+		super(parent, env, animals, foodArray, hashGrid);
+		width = 5;
 		
 		// Find a random position for the object
-		int attempts = 20;
-		boolean notFound = true;
-		int aimX;
-		int aimY;
-		do {
-			aimX = (int) pro.random(env.x, env.topX - radius);
-			aimY = (int) pro.random(env.y, env.topY - radius);
-			if(animals.size() < 0 || !(collideWithAnimal(animals, aimX, aimY))) {
-				notFound = false;
-			}
-		} while(notFound || attempts <= 0);
-		
-		// Set the position
-		PVector position = new PVector();
-		if(notFound) {
-			position.x = -1;
-			position.y = -1;
+		if(startingLoc == null) {
+			findAStartingLocation();
 		} else {
-			position.x = aimX;
-			position.y = aimY;
+			position = startingLoc;
 		}
 		
 		// Set the colour
@@ -40,14 +25,33 @@ public class Food extends EnvironmentObject {
 		colour.b = 0;
 	}
 	
-	private boolean collideWithAnimal(ArrayList <Animal> animals, int aimX, int aimY) {
+	private void findAStartingLocation() {
+		int attempts = 20;
+		boolean notFound = true;
+		PVector aimPos = new PVector();
+		do {
+			aimPos.x = (int) pro.random(env.x, env.topX - width);
+			aimPos.y = (int) pro.random(env.y, env.topY - width);
+			if(animals.size() < 0 || !(collideWithAnimal(aimPos))) {
+				notFound = false;
+			}
+		} while(notFound || attempts <= 0);
+		
+		// Set the position
+		if(notFound) {
+			position.x = -1;
+			position.y = -1;
+		} else {
+			position.x = aimPos.x;
+			position.y = aimPos.y;
+		}
+	}
+	
+	private boolean collideWithAnimal(PVector aimPos) {
 		for (int i = 0; i < animals.size(); i++) {
-			// Find the distance between circles
-			float dx = animals.get(i).position.x - aimX;
-			float dy = animals.get(i).position.y - aimY;
-			float distance = PApplet.sqrt(dx * dx + dy * dy);
-			float minDist = animals.get(i).radius + radius;
-			if(distance < minDist) {
+			// Check if squares collide using AABB collision method
+			Animal an = animals.get(i);
+			if(collisionAABB(an, aimPos)) {
 				return true;
 			}
 		}
