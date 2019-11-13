@@ -7,7 +7,7 @@ import org.gicentre.utils.FrameTimer;
 import org.gicentre.utils.stat.XYChart;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 0.7";
+	String versionNumber = "Alpha 0.8";
 	
 	// Screen dimensions
 	int scWidth;
@@ -44,7 +44,7 @@ public class Main extends PApplet {
 	
 	public void settings() {
 		if(gameFullScreen) {
-			fullScreen(P2D);
+			fullScreen();
 			scWidth = displayWidth;
 			scHeight = displayHeight;
 		} else {
@@ -52,6 +52,9 @@ public class Main extends PApplet {
 			scHeight = 480;
 			size(scWidth, scHeight);
 		}
+		
+		width = scWidth;
+		height = scHeight;
 		
 		// 0.2 is 20% offset
 		double offset = 0.2;
@@ -63,6 +66,10 @@ public class Main extends PApplet {
 		
 		RectObj envArea = new RectObj(envX, envY, envWidth, envHeight);
 		env = new Environment(this, envArea);
+		
+		// Load images
+		userInterface = new UI(this, env);
+		env.setUi(userInterface);
 		
 	}
 	
@@ -89,9 +96,6 @@ public class Main extends PApplet {
 		float chartWidth = (float) (scWidth * 0.2);
 		float chartHeight = (float) (scHeight * 0.7);
 		fpsRect = new RectObj(chartX, chartY, chartWidth, chartHeight);
-		
-		// Load images
-		userInterface = new UI(this, env);
 		
 		frameRate(60);
 		drawBackground();
@@ -127,6 +131,7 @@ public class Main extends PApplet {
 		drawBackground();
 		env.draw(deltaTime, lastLoopTime);
 		userInterface.display();
+		env.showSelectedAnimal();
 		
 		// Draw Text
 		String numOfAnimalsString = "Number of objects: " + env.animals.size();

@@ -164,6 +164,7 @@ public class Animal extends EnvironmentObject {
 	
 	public void die() {
 		movementSpeed = 0;
+		timeTillStarve = 0;
 		isDead = true;
 	}
 	
@@ -269,6 +270,18 @@ public class Animal extends EnvironmentObject {
 	
 	public int getRandomAngle() {
 		return (int) pro.random(0, 360);
+	}
+	
+	public float normaliseLifeSpan() {
+		return lifeSpanInMs / startingLifeSpan;
+	}
+	
+	public float normaliseHunger() {
+		return timeTillStarve / startingTimeTillStarve;
+	}
+	
+	public float normaliseSpeed() {
+		return movementSpeed / startingMovementSpeed;
 	}
 	
 }

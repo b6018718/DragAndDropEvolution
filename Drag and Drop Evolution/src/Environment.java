@@ -21,6 +21,7 @@ public class Environment {
 	int foodPerEvent = 5;
 	// Ms per food event
 	float msPerFoodEvent = 4000;
+	float originalFoodPerEvent = msPerFoodEvent;
 	// Counter to track time till next food spawn
 	int foodCounter = 0;
 	// Use a hash grid
@@ -29,6 +30,8 @@ public class Environment {
 	HashGrid<EnvironmentObject> hashGrid;
 	// Environment dimensions
 	RectObj env;
+	// Ui interaction
+	UI userInterface;
 	
 	ArrayList<Animal> animals = new ArrayList<Animal>();
 	ArrayList<Food> foodArray = new ArrayList<Food>();
@@ -54,7 +57,6 @@ public class Environment {
 		pro.noStroke();
 		pro.rect(env.x, env.y, env.width, env.height);
 		
-		
 		for(int i = animals.size()-1; i >= 0; i--) {
 			Animal an = animals.get(i);
 			an.show();
@@ -66,14 +68,22 @@ public class Environment {
 		showFood();
 		
 		// Update counters
-		foodCounter += lastLoopTime;
+		if(msPerFoodEvent != -1)
+			foodCounter += lastLoopTime;
 		
 		if(useHashGrid)
 			hashGrid.updateAll();
 	}
 	
+	void showSelectedAnimal() {
+		for (Animal animal : animals) {
+			animal.showSelectedCircle();
+		}
+	}
+	
+	
 	void showFood() {
-		if(foodCounter > msPerFoodEvent) {
+		if(foodCounter > msPerFoodEvent && msPerFoodEvent != -1) {
 			//System.out.println(timer.getFrameRate());
 			// Produce food
 			foodCounter = 0;
@@ -99,14 +109,25 @@ public class Environment {
 	}
 	
 	void clickOnEnv(PVector mouse) {
-		if(hashGrid != null) {
-			System.out.println(checkForCollisions(mouse, null));
-		} else {
-			System.out.println(checkForCollisions(mouse, animals));
+		if(withinEnv(mouse)) {
+			Animal an = null;
+			if(hashGrid != null) {
+				an = checkForAnimalCollisions(mouse, null);
+			} else {
+				an = checkForAnimalCollisions(mouse, animals);
+			}
+			// Send the selected animal to the user interface
+			unselectAllAnimals();
+			if(an != null){
+				an.isSelected = true;
+				userInterface.showAnimalChart(an);
+			} else {
+				userInterface.barCharts.clear();
+			}
 		}
 	}
 	
-	private boolean checkForCollisions(PVector collidePos, ArrayList<? extends EnvironmentObject> arrList) {
+	private Animal checkForAnimalCollisions(PVector collidePos, ArrayList<? extends EnvironmentObject> arrList) {
 		Set<EnvironmentObject> objectsInRange;
 		if(hashGrid != null) {
 			objectsInRange = hashGrid.get(collidePos);
@@ -117,27 +138,45 @@ public class Environment {
 		for(EnvironmentObject obj : objectsInRange) {
 			if(obj instanceof Animal) {
 				Animal animal = (Animal)obj;				
-				if(collisionAABB(animal, collidePos)) {
-					return true;
+				if(collisionAABBWithMouse(animal, collidePos)) {
+					return animal;
 				}
 			}
 		}
-		return false;
+		return null;
 	}
 	
-	protected boolean collisionAABB(EnvironmentObject obj, PVector aimPos) {
-		if(obj.position.x <= aimPos.x + width && obj.position.x + obj.width >= aimPos.x) { // X Collision
-			if(obj.position.y <= aimPos.y + width && obj.position.y + obj.width >= aimPos.y) { // Y Collision
+	protected boolean collisionAABBWithMouse(EnvironmentObject obj, PVector aimPos) {
+		if(obj.position.x <= aimPos.x + obj.width * 2 && obj.position.x + obj.width * 2 >= aimPos.x) { // X Collision
+			if(obj.position.y <= aimPos.y + obj.width * 2 && obj.position.y + obj.width * 2 >= aimPos.y) { // Y Collision
 				return true;
 			}
 		}
 		return false;
 	}
 	
-	public void speedUpDouble() {
-		msPerFoodEvent = msPerFoodEvent / 2;
-		for (Animal an : animals) {
-			an.speedMultiplier = 2;
+	public void changeSpeedMultiplierInEnv(double multiplier) {
+		if(multiplier == 0) {
+			msPerFoodEvent = -1;
+		} else {
+			msPerFoodEvent = (float) (originalFoodPerEvent / multiplier);
 		}
+		for (Animal an : animals) {
+			an.speedMultiplier = (float) multiplier;
+		}
+	}
+	
+	public void setUi(UI ui) {
+		userInterface = ui;
+	}
+	
+	public void unselectAllAnimals() {
+		for (Animal animal : animals) {
+			animal.isSelected = false;
+		}
+	}
+	
+	public boolean withinEnv(PVector mouse) {
+		return (mouse.x > env.x && mouse.x < env.topX && mouse.y > env.y & mouse.y < env.topY);
 	}
 }

@@ -15,6 +15,7 @@ public abstract class EnvironmentObject implements Locatable {
 	protected ArrayList <Animal> animals;
 	protected ArrayList <Food> foodArray;
 	protected HashGrid<EnvironmentObject> hashGrid = null;
+	public boolean isSelected = false;
 	
 	
 	EnvironmentObject(PApplet pro, RectObj env, ArrayList<Animal> animals, ArrayList <Food> foodArray, HashGrid<EnvironmentObject> hashGrid){
@@ -36,9 +37,18 @@ public abstract class EnvironmentObject implements Locatable {
 	}
 	
 	public void show() {
-		pro.fill(colour.r, colour.g, colour.b);
+		pro.fill(colour.r, colour.g, colour.b, 255);
 		pro.stroke(0);
 		pro.square(position.x, position.y, width);
+	}
+	
+	public void showSelectedCircle() {
+		// Draw outline to show is selected
+		if (isSelected) {
+			pro.fill(colour.r, colour.g, colour.b, 100);
+			pro.ellipse(position.x + width/2, position.y + width/2, width * 3f, width * 3f);
+
+		}
 	}
 	
 	protected boolean collisionAABB(EnvironmentObject obj, PVector aimPos) {
