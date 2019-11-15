@@ -61,10 +61,10 @@ public class Animal extends EnvironmentObject {
 		
 		// Movement
 		stepsToMove = 0;
-		movementSpeed = 70;
+		movementSpeed = 30;
 		startingMovementSpeed = movementSpeed;
 		direction = getRandomAngle();
-		startingTimeTillStarve = 150000 * (1/width);
+		startingTimeTillStarve = 200000 * (1/width);
 		timeTillStarve = startingTimeTillStarve;
 	}
 	
@@ -234,7 +234,7 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	public void eat(Food food, HashGrid<EnvironmentObject> hashGrid) {
-		timeTillStarve += food.width * 1000;
+		timeTillStarve += food.width * 2000;
 		if(timeTillStarve > startingTimeTillStarve) {
 			timeTillStarve = startingTimeTillStarve;
 			movementSpeed = startingMovementSpeed;

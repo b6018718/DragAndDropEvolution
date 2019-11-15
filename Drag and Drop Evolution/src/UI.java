@@ -31,7 +31,7 @@ public class UI {
 		zoomer = new ZoomPan(pro);  // Initialise the zoomer
 		zoomer.setMinZoomScale(1);
 		zoomer.setMaxZoomScale(3);
-		//zoomer.setMouseMask(-1);
+		//zoomer.setMouseMask(PConstants.SHIFT);
 		
 		// Speed Up Button
 		RectObj speedUpPos = new RectObj(pro.width * 0.4f, pro.height * 0.1f, pro.width * 0.05f, pro.height * 0.05f);
@@ -45,7 +45,7 @@ public class UI {
 		
 		
 		RectObj speedDownPos = new RectObj(pro.width * 0.3f, pro.height * 0.1f, pro.width * 0.05f, pro.height * 0.05f);
-		UiElement speedDownUi = new UiSpeedUpButton(speedDownPos, true, uiElements, env, 0.25);
+		UiElement speedDownUi = new UiSpeedUpButton(speedDownPos, true, uiElements, env, 0);
 		speedDownUi.spriteArray.add(getReversePImage(load1));
 		speedDownUi.spriteArray.add(getReversePImage(load2));
 		
@@ -115,8 +115,10 @@ public class UI {
 	public void showAnimalViewPort() {
 		if(barCharts.size() > 0) {
 			Animal an = barCharts.get(0).an;
-			viewPort = pro.get((int) (an.position.x - an.width * 3),
-					(int) (an.position.y - an.width * 3),
+			
+			PVector zoomedPos = zoomer.getCoordToDisp(an.position);
+			viewPort = pro.get((int) (zoomedPos.x - an.width * 2.5),
+					(int) (zoomedPos.y - an.width * 2.5),
 					(int) an.width * 6,
 					(int) an.width * 6);
 			
@@ -136,28 +138,13 @@ public class UI {
 			
 			pro.image(viewPort, (int) (pro.width * 0.85), (int) (pro.height * 0.2));
 			
-			/*pro.copy(
-					(int) (an.position.x - an.width * 3),
-					(int) (an.position.y - an.width * 3),
-					(int) an.width * 6,
-					(int) an.width * 6,
-					(int) (pro.width * 0.85),
-					(int) (pro.height * 0.2),
-					(int) an.width * 6,
-					(int) an.width * 6
-					);*/
-			if(zoomedIn) {
-				float zoomScale = (float) zoomer.getZoomScale();
-				float widthCalc = an.width / 2 * zoomScale;
-				PVector zoomPos = new PVector(- ((an.position.x - widthCalc - pro.width / 2) * zoomScale), -((an.position.y - widthCalc - pro.height / 2) * zoomScale)); //zoomer.getCoordToDisp(an.position);
-				
-				//System.out.println(zoomer.getCoordToDisp(an.position));
-				zoomer.setPanOffset(zoomPos.x, zoomPos.y);
-				correctPanOffset();
-				System.out.println("Animal" + an.position);
-				System.out.println(zoomer.getPanOffset());
-			}
+			// Camera follow animal
+			float zoomScale = (float) zoomer.getZoomScale();
+			float widthCalc = an.width / 2 * zoomScale;
+			PVector zoomPos = new PVector(- ((an.position.x - widthCalc - pro.width / 2) * zoomScale), -((an.position.y - widthCalc - pro.height / 2) * zoomScale)); //zoomer.getCoordToDisp(an.position);
 			
+			zoomer.setPanOffset(zoomPos.x, zoomPos.y);
+			correctPanOffset();
 		}
 	}
 	
@@ -176,7 +163,7 @@ public class UI {
 		float fixOffsetyTop = (float) (pro.height  * (zoomer.getZoomScale() - 1) * 0.3);
 		float fixOffsetxTop = (float) (pro.width  * (zoomer.getZoomScale() - 1) * 0.3);
 		PVector panOffset = zoomer.getPanOffset();
-		System.out.println(panOffset);
+		// Fix the offset to stop the zoom view going out of bounds
 		if(panOffset.x < -fixOffsetxTop)
 			panOffset.x = -fixOffsetxTop;
 		if(panOffset.x > fixOffsetx)
@@ -187,15 +174,5 @@ public class UI {
 			panOffset.y = -fixOffsety;
 
 		zoomer.setPanOffset(panOffset.x, panOffset.y);
-	}
-	
-	public void zoomIn(int zoomLevel) {
-		if(!zoomedIn) {
-			zoomer.setZoomScale(zoomLevel);
-			zoomedIn = true;
-		} else {
-			zoomer.setZoomScale(1);
-			zoomedIn = false;
-		}
 	}
 }

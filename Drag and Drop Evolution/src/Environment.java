@@ -156,6 +156,15 @@ public class Environment {
 		return false;
 	}
 	
+	protected boolean isInsideEnv(PVector aimPos) {
+		if(env.x <= aimPos.x && env.topX >= aimPos.x) { // X Collision
+			if(env.y <= aimPos.y && env.topY >= aimPos.y) { // Y Collision
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public void changeSpeedMultiplierInEnv(double multiplier) {
 		if(multiplier == 0) {
 			msPerFoodEvent = -1;
