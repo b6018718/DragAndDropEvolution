@@ -20,7 +20,7 @@ public class Environment {
 	// Amount of food
 	int foodPerEvent = 5;
 	// Ms per food event
-	float msPerFoodEvent = 4000;
+	float msPerFoodEvent = 2000;
 	float originalFoodPerEvent = msPerFoodEvent;
 	// Counter to track time till next food spawn
 	int foodCounter = 0;
@@ -49,6 +49,7 @@ public class Environment {
 		for(int i = 0; i < numOfAnimals; i++) {
 			addAnimal();
 		}
+		
 	}
 	
 	void draw(float deltaTime, int lastLoopTime) {

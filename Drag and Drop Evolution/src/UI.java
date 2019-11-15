@@ -8,6 +8,8 @@ import processing.core.PGraphics;
 import processing.core.PImage;
 import processing.core.PVector;
 
+import org.gicentre.utils.move.*;
+
 public class UI {
 	PApplet pro;
 	ArrayList<UiElement> uiElements = new ArrayList<UiElement>();
@@ -15,10 +17,21 @@ public class UI {
 	Environment env;
 	PImage viewPort;
 	PGraphics mask;
+	double uiOffset;
+	// Zoom elements
+	ZoomPan zoomer;
+	boolean zoomedIn = false;
 	
-	UI(PApplet pro, Environment env){
+	UI(PApplet pro, Environment env, double uiOffset){
 		this.pro = pro;
 		this.env = env;
+		this.uiOffset = uiOffset;
+		
+		//Set up zoomer 
+		zoomer = new ZoomPan(pro);  // Initialise the zoomer
+		zoomer.setMinZoomScale(1);
+		zoomer.setMaxZoomScale(3);
+		//zoomer.setMouseMask(-1);
 		
 		// Speed Up Button
 		RectObj speedUpPos = new RectObj(pro.width * 0.4f, pro.height * 0.1f, pro.width * 0.05f, pro.height * 0.05f);
@@ -32,7 +45,7 @@ public class UI {
 		
 		
 		RectObj speedDownPos = new RectObj(pro.width * 0.3f, pro.height * 0.1f, pro.width * 0.05f, pro.height * 0.05f);
-		UiElement speedDownUi = new UiSpeedUpButton(speedDownPos, true, uiElements, env, 0);
+		UiElement speedDownUi = new UiSpeedUpButton(speedDownPos, true, uiElements, env, 0.25);
 		speedDownUi.spriteArray.add(getReversePImage(load1));
 		speedDownUi.spriteArray.add(getReversePImage(load2));
 		
@@ -40,6 +53,13 @@ public class UI {
 	}
 	
 	public void display() {
+		//Draw UI Boxes
+		pro.fill(0, 117, 199);
+		pro.noStroke();
+		pro.rect(0f, 0f, (float) pro.width, (float) (pro.height * uiOffset));
+		pro.rect((float) (pro.width * (1 - uiOffset)), 0f, (float) (pro.width * uiOffset), (float) pro.height);
+		
+		
 		// Display Bar Charts
 		for (UiBarChart barChart : barCharts) {
 			// Draw Data
@@ -126,6 +146,56 @@ public class UI {
 					(int) an.width * 6,
 					(int) an.width * 6
 					);*/
+			if(zoomedIn) {
+				float zoomScale = (float) zoomer.getZoomScale();
+				float widthCalc = an.width / 2 * zoomScale;
+				PVector zoomPos = new PVector(- ((an.position.x - widthCalc - pro.width / 2) * zoomScale), -((an.position.y - widthCalc - pro.height / 2) * zoomScale)); //zoomer.getCoordToDisp(an.position);
+				
+				//System.out.println(zoomer.getCoordToDisp(an.position));
+				zoomer.setPanOffset(zoomPos.x, zoomPos.y);
+				correctPanOffset();
+				System.out.println("Animal" + an.position);
+				System.out.println(zoomer.getPanOffset());
+			}
+			
+		}
+	}
+	
+	public void zoomStart() {
+		pro.pushMatrix();
+		zoomer.transform();
+	}
+	
+	public void zoomEnd() {
+		pro.popMatrix();
+	}
+	
+	public void correctPanOffset() {
+		float fixOffsetx = (float) (pro.width/2 * (zoomer.getZoomScale() - 1));
+		float fixOffsety = (float) (pro.height/2 * (zoomer.getZoomScale() - 1));
+		float fixOffsetyTop = (float) (pro.height  * (zoomer.getZoomScale() - 1) * 0.3);
+		float fixOffsetxTop = (float) (pro.width  * (zoomer.getZoomScale() - 1) * 0.3);
+		PVector panOffset = zoomer.getPanOffset();
+		System.out.println(panOffset);
+		if(panOffset.x < -fixOffsetxTop)
+			panOffset.x = -fixOffsetxTop;
+		if(panOffset.x > fixOffsetx)
+			panOffset.x = fixOffsetx;
+		if(panOffset.y > fixOffsetyTop)
+			panOffset.y = fixOffsetyTop;
+		if(panOffset.y < -fixOffsety)
+			panOffset.y = -fixOffsety;
+
+		zoomer.setPanOffset(panOffset.x, panOffset.y);
+	}
+	
+	public void zoomIn(int zoomLevel) {
+		if(!zoomedIn) {
+			zoomer.setZoomScale(zoomLevel);
+			zoomedIn = true;
+		} else {
+			zoomer.setZoomScale(1);
+			zoomedIn = false;
 		}
 	}
 }

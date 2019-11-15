@@ -61,7 +61,7 @@ public class Animal extends EnvironmentObject {
 		
 		// Movement
 		stepsToMove = 0;
-		movementSpeed = 130;
+		movementSpeed = 70;
 		startingMovementSpeed = movementSpeed;
 		direction = getRandomAngle();
 		startingTimeTillStarve = 150000 * (1/width);
@@ -120,9 +120,11 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	public boolean checkIfDead(float lastLoopTime) {
+		float elderlySpeed = movementSpeed;
+		float hungerSpeed = movementSpeed;
 		
 		lastLoopTime = lastLoopTime * speedMultiplier;
-		
+
 		lifeSpanInMs = lifeSpanInMs - lastLoopTime;
 		timeTillStarve = timeTillStarve - lastLoopTime;
 		
@@ -131,7 +133,19 @@ public class Animal extends EnvironmentObject {
 		if(lifeRemaining < startDyingPercentageOfLife && lifeSpanInMs > 0) {
 			// Creature starts dying so calculate the speed reduction
 			float movementMultiplier = lifeRemaining / startDyingPercentageOfLife;
-			movementSpeed = startingMovementSpeed * movementMultiplier;
+			elderlySpeed = startingMovementSpeed * movementMultiplier;
+		}
+		
+		// Hungry check
+		if(timeTillStarve < whenGetHungryMs) {
+			hungerSpeed = startingMovementSpeed * (timeTillStarve / whenGetHungryMs);
+		}
+		
+		// Check which movement decrease is largest
+		if(hungerSpeed < elderlySpeed) {
+			movementSpeed = hungerSpeed;
+		} else {
+			movementSpeed = elderlySpeed;
 		}
 		
 		// Compost check
@@ -139,15 +153,11 @@ public class Animal extends EnvironmentObject {
 			removeFromEnvironment();
 		}
 		
-		// Hungry check
-		if(timeTillStarve < whenGetHungryMs) {
-			movementSpeed = startingMovementSpeed * (timeTillStarve / whenGetHungryMs);
-		}
-		
 		// Starve check
 		if(timeTillStarve < 0 && lifeSpanInMs > 0) {
 			lifeSpanInMs = 0;
 			die();
+			return true;
 		}
 			
 		// Old age death check
@@ -156,7 +166,6 @@ public class Animal extends EnvironmentObject {
 			die();
 			return true;
 		}
-			
 		
 		//Animal is still alive
 		return false;

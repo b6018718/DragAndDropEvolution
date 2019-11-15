@@ -1,5 +1,4 @@
 import processing.core.PApplet;
-import processing.core.PImage;
 import processing.core.PVector;
 
 import java.util.ArrayList;
@@ -7,7 +6,7 @@ import org.gicentre.utils.FrameTimer;
 import org.gicentre.utils.stat.XYChart;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 0.8";
+	String versionNumber = "Alpha 0.9";
 	
 	// Screen dimensions
 	int scWidth;
@@ -34,9 +33,6 @@ public class Main extends PApplet {
 	ArrayList <PVector> fpsArray = new ArrayList<PVector>();
 	float secondCount = 0;
 	RectObj fpsRect;
-	
-	// Images
-	PImage speedUpImg;
 
 	public static void main(String[] args) {
 		PApplet.main( new String[] { "Main" } );
@@ -44,13 +40,13 @@ public class Main extends PApplet {
 	
 	public void settings() {
 		if(gameFullScreen) {
-			fullScreen();
+			fullScreen(JAVA2D);
 			scWidth = displayWidth;
 			scHeight = displayHeight;
 		} else {
 			scWidth = 640;
 			scHeight = 480;
-			size(scWidth, scHeight);
+			size(scWidth, scHeight, JAVA2D);
 		}
 		
 		width = scWidth;
@@ -68,7 +64,7 @@ public class Main extends PApplet {
 		env = new Environment(this, envArea);
 		
 		// Load images
-		userInterface = new UI(this, env);
+		userInterface = new UI(this, env, offset);
 		env.setUi(userInterface);
 		
 	}
@@ -102,7 +98,8 @@ public class Main extends PApplet {
 	}
 	
 	public void drawBackground() {
-		setGradient(0, 0, width, height, color(160, 160, 160), color(10, 50, 255), Y_AXIS);
+		//setGradient(0, 0, width, height, color(160, 160, 160), color(10, 50, 255), Y_AXIS);
+		background(0, 117, 199);
 	}
 	
 	public float getDeltaTime(int lastLoopTime) {
@@ -127,12 +124,17 @@ public class Main extends PApplet {
 			secondCount++;
 		}
 		
+		// Sets the boundaries for the panning so that it doesn't allow the screen to go outside the play area
+		userInterface.correctPanOffset();
+		
 		// Drawing functions
 		drawBackground();
+		userInterface.zoomStart();
 		env.draw(deltaTime, lastLoopTime);
-		userInterface.display();
 		env.showSelectedAnimal();
+		userInterface.zoomEnd();
 		
+		userInterface.display();
 		// Draw Text
 		String numOfAnimalsString = "Number of objects: " + env.animals.size();
 		textSize(scWidth/30);
@@ -152,13 +154,16 @@ public class Main extends PApplet {
 	public void keyPressed() {
 		if (key == 'f' || key == 'F')
 			showFPSGraph = !showFPSGraph;
+		else if (key == 'z' || key == 'Z')
+			userInterface.zoomIn(3);
 	}
 	
 	public void mousePressed() {
 		// Loop through the environments looking for creatures
-		PVector mouse = new PVector(mouseX, mouseY);
-		env.clickOnEnv(mouse);
-		userInterface.checkCollisions(mouse);
+		PVector mouseZoomed = userInterface.zoomer.getMouseCoord();
+		PVector mouseUi = new PVector(mouseX, mouseY);
+		env.clickOnEnv(mouseZoomed);
+		userInterface.checkCollisions(mouseUi);
 	}
 	
 	public void showCharts() {
