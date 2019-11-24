@@ -5,6 +5,7 @@ import java.util.Set;
 import org.gicentre.utils.geom.HashGrid;
 
 import processing.core.PApplet;
+import processing.core.PImage;
 import processing.core.PVector;
 
 public class Environment {
@@ -36,14 +37,21 @@ public class Environment {
 	ArrayList<Animal> animals = new ArrayList<Animal>();
 	ArrayList<Food> foodArray = new ArrayList<Food>();
 	
+	PImage animalImage;
+	
 	Environment(PApplet processing, RectObj env){
 		pro = processing;
 		this.env = env;
+		
+		// Get the max proper max size
+		maxObjectSize = calculateObjectSize();
 		
 		// Create a hash grid
 		if(useHashGrid) {
 			hashGrid = new HashGrid<EnvironmentObject>(env.topX, env.topY, maxObjectSize * 2 + 1);
 		}
+		
+		animalImage = pro.loadImage("Rabbit.png");
 		
 		// Create the animals
 		for(int i = 0; i < numOfAnimals; i++) {
@@ -76,6 +84,10 @@ public class Environment {
 			hashGrid.updateAll();
 	}
 	
+	float calculateObjectSize() {
+		return pro.width * 0.01f;
+	}
+	
 	void showSelectedAnimal() {
 		for (Animal animal : animals) {
 			animal.showSelectedCircle();
@@ -103,7 +115,7 @@ public class Environment {
 	}
 	
 	void addAnimal() {
-		animals.add(new Animal(pro, animals, foodArray, maxObjectSize, env, hashGrid));
+		animals.add(new Animal(pro, animals, foodArray, maxObjectSize, env, hashGrid, animalImage));
 		if(useHashGrid) {
 			hashGrid.add(animals.get(animals.size() -1));
 		}

@@ -9,8 +9,8 @@ public class Food extends EnvironmentObject {
 	// Constructor
 	Food(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, RectObj env, HashGrid<EnvironmentObject> hashGrid, PVector startingLoc){
 		// Call the parent constructor
-		super(parent, env, animals, foodArray, hashGrid);
-		width = 5;
+		super(parent, env, animals, foodArray, hashGrid, null);
+		width = pro.width * 0.005f;
 		
 		// Find a random position for the object
 		if(startingLoc == null) {

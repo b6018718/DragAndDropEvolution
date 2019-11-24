@@ -4,6 +4,7 @@ import java.util.HashSet;
 import org.gicentre.utils.geom.HashGrid;
 
 import processing.core.PApplet;
+import processing.core.PImage;
 import processing.core.PVector;
 import java.util.Set;
 
@@ -27,18 +28,20 @@ public class Animal extends EnvironmentObject {
 	boolean isDead = false;
 	float speedMultiplier = 1;
 	
+	
 	// This processor object allows us to access Processor methods outside of the main class
 	//PApplet pro;
 	
-	Animal(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, float maxObjectSize, RectObj env, HashGrid<EnvironmentObject> hashGrid){
+	Animal(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, float maxObjectSize, RectObj env, HashGrid<EnvironmentObject> hashGrid, PImage animalImage){
 		// Add the processing applet into the class
-		super(parent, env, animals, foodArray, hashGrid);
+		super(parent, env, animals, foodArray, hashGrid, animalImage);
 
 		// Set the attributes
 		this.id = animals.size();
-		//width = getPixelsFromPercentWidth(5);
-		width = maxObjectSize;
+		//width = maxObjectSize;
+		//this.maxObjectSize = getPixelsFromPercentWidth(maxObjectSize);
 		this.maxObjectSize = maxObjectSize;
+		width = maxObjectSize;
 		
 		// Survival
 		int placeAttempts = 20;
@@ -61,10 +64,10 @@ public class Animal extends EnvironmentObject {
 		
 		// Movement
 		stepsToMove = 0;
-		movementSpeed = 30;
+		movementSpeed = 50;
 		startingMovementSpeed = movementSpeed;
 		direction = getRandomAngle();
-		startingTimeTillStarve = 200000 * (1/width);
+		startingTimeTillStarve = 250000 * (1/width);
 		timeTillStarve = startingTimeTillStarve;
 	}
 	

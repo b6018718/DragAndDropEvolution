@@ -6,7 +6,7 @@ import org.gicentre.utils.FrameTimer;
 import org.gicentre.utils.stat.XYChart;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 0.9";
+	String versionNumber = "Alpha 1.1";
 	
 	// Screen dimensions
 	int scWidth;
@@ -22,7 +22,7 @@ public class Main extends PApplet {
 	float LOW_LIMIT = 0.0167f; 	// 10 fps
 	float HIGH_LIMIT = 0.1f; 	// 60 fps
 	// Boolean variables
-	boolean gameFullScreen = false;
+	boolean gameFullScreen = true;
 	boolean showFPSGraph = false;
 	// Environment
 	Environment env;

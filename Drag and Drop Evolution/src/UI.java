@@ -107,7 +107,7 @@ public class UI {
 	
 	public void showAnimalChart(Animal an) {
 		barCharts.clear();
-		RectObj position = new RectObj(pro.width * 0.8f, pro.height * 0.3f, pro.width * 0.2f, pro.height * 0.2f);
+		RectObj position = new RectObj(pro.width * 0.8f, pro.height * 0.45f, pro.width * 0.2f, pro.height * 0.2f);
 		UiBarChart barChart = new UiBarChart(new BarChart(pro), position, an);
 		barCharts.add(barChart);
 	}
@@ -117,26 +117,27 @@ public class UI {
 			Animal an = barCharts.get(0).an;
 			
 			PVector zoomedPos = zoomer.getCoordToDisp(an.position);
-			viewPort = pro.get((int) (zoomedPos.x - an.width * 2.5),
-					(int) (zoomedPos.y - an.width * 2.5),
-					(int) an.width * 6,
-					(int) an.width * 6);
+			viewPort = pro.get((int) (zoomedPos.x - an.width * 3),
+					(int) (zoomedPos.y - an.width * 3),
+					(int) an.width * 10,
+					(int) an.width * 10);
 			
-			mask = pro.createGraphics((int) an.width * 6, (int) an.width * 6);
+			mask = pro.createGraphics((int) an.width * 10, (int) an.width * 10);
 			mask.beginDraw();
 			// Erase graphics
 			mask.background(0);
 			mask.fill(255);
 			mask.noStroke();
 			//mask.ellipse(an.position.x - an.width * 3, an.position.y - an.width * 3, an.width * 3, an.width * 3);
-			mask.ellipse(an.width * 3, an.width * 3, an.width * 6, an.width * 6);
+			pro.ellipseMode(PConstants.CENTER);
+			mask.ellipse((float) (an.width * 4),(float) (an.width * 4), an.width * 8, an.width * 8);
 			mask.stroke(128);
 			mask.strokeWeight(5);
 			mask.endDraw();
 			
 			viewPort.mask(mask);
 			
-			pro.image(viewPort, (int) (pro.width * 0.85), (int) (pro.height * 0.2));
+			pro.image(viewPort, (int) (pro.width * 0.85), (int) (pro.height * 0.2), (int) (pro.width * 0.12), (int) (pro.width * 0.12));
 			
 			// Camera follow animal
 			float zoomScale = (float) zoomer.getZoomScale();

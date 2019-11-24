@@ -4,6 +4,7 @@ import org.gicentre.utils.geom.HashGrid;
 import org.gicentre.utils.geom.Locatable;
 
 import processing.core.PApplet;
+import processing.core.PImage;
 import processing.core.PVector;
 
 public abstract class EnvironmentObject implements Locatable {
@@ -16,14 +17,15 @@ public abstract class EnvironmentObject implements Locatable {
 	protected ArrayList <Food> foodArray;
 	protected HashGrid<EnvironmentObject> hashGrid = null;
 	public boolean isSelected = false;
+	PImage image = null;
 	
-	
-	EnvironmentObject(PApplet pro, RectObj env, ArrayList<Animal> animals, ArrayList <Food> foodArray, HashGrid<EnvironmentObject> hashGrid){
+	EnvironmentObject(PApplet pro, RectObj env, ArrayList<Animal> animals, ArrayList <Food> foodArray, HashGrid<EnvironmentObject> hashGrid, PImage image){
 		this.pro = pro;
 		this.env = env;
 		this.animals = animals;
 		this.foodArray = foodArray;
 		this.hashGrid = hashGrid;
+		this.image = image;
 	}
 	
 	class Color{
@@ -37,9 +39,17 @@ public abstract class EnvironmentObject implements Locatable {
 	}
 	
 	public void show() {
-		pro.fill(colour.r, colour.g, colour.b, 255);
-		pro.stroke(0);
-		pro.square(position.x, position.y, width);
+		if(image == null) {
+			// No image selected
+			pro.fill(colour.r, colour.g, colour.b, 255);
+			pro.stroke(0);
+			pro.square(position.x, position.y, width);
+		} else {
+			// Image selected
+			pro.tint(colour.r, colour.g, colour.b, 255);
+			pro.image(image, position.x, position.y, width, width);
+			pro.noTint();
+		}
 	}
 	
 	public void showSelectedCircle() {
