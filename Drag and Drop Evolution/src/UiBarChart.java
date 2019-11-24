@@ -11,7 +11,7 @@ public class UiBarChart {
 		this.an = an;
 		
 		barChart.setData(new float[] {an.normaliseLifeSpan(), an.normaliseHunger(), an.normaliseSpeed() });
-		barChart.setBarLabels(new String[] {"Energy","Hunger","Speed"});
+		barChart.setBarLabels(new String[] {"Lifespan","Hunger","Speed"});
 		barChart.setMinValue(0);
 		barChart.setMaxValue(1);
 		

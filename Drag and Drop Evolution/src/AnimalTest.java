@@ -12,10 +12,9 @@ class AnimalTest extends PApplet{
 	void test() {
 		ArrayList<Animal> animals = new ArrayList<Animal>();
 		ArrayList<Food> foodArray = new ArrayList<Food>();
-		float maxObjectSize = 15f;
 		RectObj envArea = new RectObj(0, 0, height, width);
 		for(int i = 0; i < 1000; i++) {
-			animals.add(new Animal(this, animals, foodArray, maxObjectSize, envArea, null, null));
+			animals.add(new Animal(this, animals, foodArray, envArea, null, null, new Gene(null)));
 			assertTrue(animals.get(i).getRandomAngle() >= 0);
 			assertTrue(animals.get(i).getRandomAngle() <= 360);
 		}

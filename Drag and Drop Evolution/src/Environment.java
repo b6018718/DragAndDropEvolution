@@ -5,7 +5,6 @@ import java.util.Set;
 import org.gicentre.utils.geom.HashGrid;
 
 import processing.core.PApplet;
-import processing.core.PImage;
 import processing.core.PVector;
 
 public class Environment {
@@ -15,11 +14,11 @@ public class Environment {
 	// Environment dimensions
 	int x, y, width, height;
 	// Starting population animal count
-	int numOfAnimals = 10;
+	int numOfAnimals = 100;
 	// Max size of animals
 	float maxObjectSize = 10f;
 	// Amount of food
-	int foodPerEvent = 5;
+	int foodPerEvent = 10;
 	// Ms per food event
 	float msPerFoodEvent = 2000;
 	float originalFoodPerEvent = msPerFoodEvent;
@@ -36,12 +35,14 @@ public class Environment {
 	
 	ArrayList<Animal> animals = new ArrayList<Animal>();
 	ArrayList<Food> foodArray = new ArrayList<Food>();
+	ArrayList<Egg> eggArray = new ArrayList<Egg>();
 	
-	PImage animalImage;
+	ImageManager imageManager;
 	
 	Environment(PApplet processing, RectObj env){
 		pro = processing;
 		this.env = env;
+		imageManager = new ImageManager(pro);
 		
 		// Get the max proper max size
 		maxObjectSize = calculateObjectSize();
@@ -50,8 +51,6 @@ public class Environment {
 		if(useHashGrid) {
 			hashGrid = new HashGrid<EnvironmentObject>(env.topX, env.topY, maxObjectSize * 2 + 1);
 		}
-		
-		animalImage = pro.loadImage("Rabbit.png");
 		
 		// Create the animals
 		for(int i = 0; i < numOfAnimals; i++) {
@@ -66,15 +65,20 @@ public class Environment {
 		pro.noStroke();
 		pro.rect(env.x, env.y, env.width, env.height);
 		
+		// Draw the food onto the environment
+		showFood();
+		
+		// Draw the eggs
+		showEggs();
+		
+		// Iterate over the loop backwards so that we can remove animals from the list
 		for(int i = animals.size()-1; i >= 0; i--) {
 			Animal an = animals.get(i);
 			an.show();
 			an.move(deltaTime);
+			animalReproduce(an, lastLoopTime);
 			an.checkIfDead(lastLoopTime);
 		}
-		
-		// Draw the food onto the environment
-		showFood();
 		
 		// Update counters
 		if(msPerFoodEvent != -1)
@@ -82,6 +86,18 @@ public class Environment {
 		
 		if(useHashGrid)
 			hashGrid.updateAll();
+	}
+	
+	void showEggs() {
+		for (Egg egg : eggArray) {
+			egg.show();
+		}
+	}
+	
+	void animalReproduce(Animal an, int lastLoopTime) {
+		Egg egg = an.reproduce(lastLoopTime);
+		if(egg != null)
+			eggArray.add(egg);
 	}
 	
 	float calculateObjectSize() {
@@ -97,7 +113,6 @@ public class Environment {
 	
 	void showFood() {
 		if(foodCounter > msPerFoodEvent && msPerFoodEvent != -1) {
-			//System.out.println(timer.getFrameRate());
 			// Produce food
 			foodCounter = 0;
 			for (int i = 0; i < foodPerEvent; i++) {
@@ -115,7 +130,7 @@ public class Environment {
 	}
 	
 	void addAnimal() {
-		animals.add(new Animal(pro, animals, foodArray, maxObjectSize, env, hashGrid, animalImage));
+		animals.add(new Animal(pro, animals, foodArray, env, hashGrid, imageManager, new Gene(null)));
 		if(useHashGrid) {
 			hashGrid.add(animals.get(animals.size() -1));
 		}
@@ -183,8 +198,13 @@ public class Environment {
 		} else {
 			msPerFoodEvent = (float) (originalFoodPerEvent / multiplier);
 		}
+		// Change speed for animals
 		for (Animal an : animals) {
 			an.speedMultiplier = (float) multiplier;
+		}
+		// Change speed for eggs
+		for(Egg egg : eggArray) {
+			egg.speedMultiplier = (float) multiplier;
 		}
 	}
 	

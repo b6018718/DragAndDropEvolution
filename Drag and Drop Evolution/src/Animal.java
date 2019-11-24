@@ -4,7 +4,6 @@ import java.util.HashSet;
 import org.gicentre.utils.geom.HashGrid;
 
 import processing.core.PApplet;
-import processing.core.PImage;
 import processing.core.PVector;
 import java.util.Set;
 
@@ -12,36 +11,45 @@ public class Animal extends EnvironmentObject {
 	// Properties
 	float standardSize;
 	int direction;
-	int stepsToMove;
 	float movementSpeed;
-	float startingMovementSpeed;
 	int id;
-	float maxObjectSize;
 	boolean keepTurning = false;
+	boolean isDead = false;
 	float coinToss;
+	
+	// Life span
 	float startingLifeSpan = 60000;
-	float startingTimeTillStarve;
-	float timeTillStarve;
 	float lifeSpanInMs = startingLifeSpan;
 	float startDyingPercentageOfLife = 0.2f;
+
+	// Food
+	float timeTillStarve;
+	float startingTimeTillStarve;
 	float whenGetHungryMs = 1000;
-	boolean isDead = false;
+	
+	// UI setting
 	float speedMultiplier = 1;
+	
+	// Reproduction
+	float startingTimeTillLayEgg;
+	float timeTillLayEgg;
+	int numberOfChildren = 0;
+	
+	Gene gene;
 	
 	
 	// This processor object allows us to access Processor methods outside of the main class
 	//PApplet pro;
 	
-	Animal(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, float maxObjectSize, RectObj env, HashGrid<EnvironmentObject> hashGrid, PImage animalImage){
+	Animal(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, RectObj env, HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager, Gene gene){
 		// Add the processing applet into the class
-		super(parent, env, animals, foodArray, hashGrid, animalImage);
+		super(parent, env, animals, foodArray, hashGrid, imageManager);
+		this.gene = gene;
+		this.width = gene.size;
 
 		// Set the attributes
+		// This is technically a bug, can get situations where certain animals have the same id
 		this.id = animals.size();
-		//width = maxObjectSize;
-		//this.maxObjectSize = getPixelsFromPercentWidth(maxObjectSize);
-		this.maxObjectSize = maxObjectSize;
-		width = maxObjectSize;
 		
 		// Survival
 		int placeAttempts = 20;
@@ -58,17 +66,37 @@ public class Animal extends EnvironmentObject {
 		
 		
 		// Set random colour
-		colour.r = (int) pro.random(0, 255);
-		colour.g = (int) pro.random(0, 255);
-		colour.b = (int) pro.random(0, 255);
+		if(gene.colour == null) {
+			colour.r = (int) pro.random(0, 255);
+			colour.g = (int) pro.random(0, 255);
+			colour.b = (int) pro.random(0, 255);
+			gene.colour = colour;
+		} else {
+			colour = gene.colour;
+		}
 		
 		// Movement
-		stepsToMove = 0;
-		movementSpeed = 50;
-		startingMovementSpeed = movementSpeed;
+		movementSpeed = gene.speed;
 		direction = getRandomAngle();
-		startingTimeTillStarve = 250000 * (1/width);
+		
+		// Time till starve
+		startingTimeTillStarve = calculateStarveTime();
 		timeTillStarve = startingTimeTillStarve;
+		
+		// Reproduction
+		startingTimeTillLayEgg = calculateBirthRate();
+		timeTillLayEgg = startingTimeTillLayEgg;
+	}
+	
+	float calculateBirthRate() {
+		return startingLifeSpan/3 - 5000;
+	}
+	
+	float calculateStarveTime() {
+		// y = x/12 and y = x/50, graphs for the starve time
+		float sizeMultiplier = 12/width;
+		float agilityMultiplier = 50/gene.speed;
+		return 15000 * sizeMultiplier * agilityMultiplier;
 	}
 	
 	float getPixelsFromPercentWidth(float percentOfScreenWidth) {
@@ -83,7 +111,37 @@ public class Animal extends EnvironmentObject {
 			setAimVectorAsLocation(aimVector);
 		}
 		isOutOfBounds();
-		stepsToMove--;
+	}
+	
+	Egg reproduce(int lastLoopTime) {
+		// If no food in belly
+		if(!(hasFoodInBelly())) {
+			// Restart the egg timer
+			timeTillLayEgg = startingTimeTillLayEgg;
+		} else {
+			// Update the timer
+			timeTillLayEgg = timeTillLayEgg - lastLoopTime;
+		}
+		
+		// Check if can lay egg
+		if(timeTillLayEgg < 0) {
+			// Lay egg
+			timeTillLayEgg = startingTimeTillLayEgg;
+			return new Egg(pro, env, animals, foodArray, hashGrid, imageManager, gene, position);
+		}
+		return null;
+	}
+	
+	@Override
+	public void show() {
+		// Image selected
+		pro.tint(colour.r, colour.g, colour.b, 255);
+		pro.image(imageManager.animalImage, position.x, position.y, width, width);
+		pro.noTint();
+	}
+	
+	boolean hasFoodInBelly() {
+		return (timeTillStarve / startingTimeTillStarve > 0.10f);
 	}
 	
 	private PVector getAimVector(float deltaTime) {		
@@ -136,12 +194,12 @@ public class Animal extends EnvironmentObject {
 		if(lifeRemaining < startDyingPercentageOfLife && lifeSpanInMs > 0) {
 			// Creature starts dying so calculate the speed reduction
 			float movementMultiplier = lifeRemaining / startDyingPercentageOfLife;
-			elderlySpeed = startingMovementSpeed * movementMultiplier;
+			elderlySpeed = gene.speed * movementMultiplier;
 		}
 		
 		// Hungry check
 		if(timeTillStarve < whenGetHungryMs) {
-			hungerSpeed = startingMovementSpeed * (timeTillStarve / whenGetHungryMs);
+			hungerSpeed = gene.speed * (timeTillStarve / whenGetHungryMs);
 		}
 		
 		// Check which movement decrease is largest
@@ -240,7 +298,7 @@ public class Animal extends EnvironmentObject {
 		timeTillStarve += food.width * 2000;
 		if(timeTillStarve > startingTimeTillStarve) {
 			timeTillStarve = startingTimeTillStarve;
-			movementSpeed = startingMovementSpeed;
+			movementSpeed = gene.speed;
 		}
 		foodArray.remove(food);
 		if(hashGrid != null) {
@@ -253,25 +311,21 @@ public class Animal extends EnvironmentObject {
 		
 		if(position.x + width > env.topX) {
 			position.x = env.topX - width;
-			stepsToMove = stepsToMove - 100;
 			hitSide = true;
 		}
 			
 		if(position.x < env.x) {
 			position.x = env.x;
-			stepsToMove = stepsToMove - 100;
 			hitSide = true;
 		}
 		
 		if(position.y + width > env.topY) {
 			position.y = env.topY - width;
-			stepsToMove = stepsToMove - 100;
 			hitSide = true;
 		}
 		
 		if(position.y < env.y) {
 			position.y = env.y;
-			stepsToMove = stepsToMove - 100;
 			hitSide = true;
 		}
 		
@@ -293,7 +347,7 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	public float normaliseSpeed() {
-		return movementSpeed / startingMovementSpeed;
+		return movementSpeed / gene.speed;
 	}
 	
 }

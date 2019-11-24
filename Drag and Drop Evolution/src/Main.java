@@ -6,7 +6,7 @@ import org.gicentre.utils.FrameTimer;
 import org.gicentre.utils.stat.XYChart;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 1.1";
+	String versionNumber = "Alpha 1.2";
 	
 	// Screen dimensions
 	int scWidth;
