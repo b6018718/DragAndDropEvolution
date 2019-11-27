@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 
-import org.gicentre.utils.stat.BarChart;
+import org.gicentre.utils.stat.XYChart;
 
 import processing.core.PApplet;
 import processing.core.PConstants;
@@ -14,6 +14,12 @@ public class UI {
 	PApplet pro;
 	ArrayList<UiElement> uiElements = new ArrayList<UiElement>();
 	ArrayList<UiBarChart> barCharts = new ArrayList<UiBarChart>();
+	
+	// Line Charts
+	UiLineChart fpsLineChart;
+	UiLineChart animalPopulation;
+	UiLineChart birthRate;
+	
 	Environment env;
 	PImage viewPort;
 	PGraphics mask;
@@ -21,6 +27,9 @@ public class UI {
 	// Zoom elements
 	ZoomPan zoomer;
 	boolean zoomedIn = false;
+	float speedMultiplier = 1;
+	
+	XYChart chart;
 	
 	UI(PApplet pro, Environment env, double uiOffset){
 		this.pro = pro;
@@ -30,7 +39,7 @@ public class UI {
 		//Set up zoomer 
 		zoomer = new ZoomPan(pro);  // Initialise the zoomer
 		zoomer.setMinZoomScale(1);
-		zoomer.setMaxZoomScale(3);
+		zoomer.setMaxZoomScale(2.5);
 		//zoomer.setMouseMask(PConstants.SHIFT);
 		
 		// Speed Up Button
@@ -50,6 +59,27 @@ public class UI {
 		speedDownUi.spriteArray.add(getReversePImage(load2));
 		
 		uiElements.add(speedDownUi);
+		
+		// Create fps line charts
+		float chartX = (float) (pro.width * 0.8);
+		float chartY = (float) (pro.height * 0.2);
+		float chartWidth = (float) (pro.width * 0.2);
+		float chartHeight = (float) (pro.height * 0.7);
+		RectObj fpsRect = new RectObj(chartX, chartY, chartWidth, chartHeight);
+		fpsLineChart = new UiLineChart(pro, env, fpsRect, 60, false);
+		fpsLineChart.display = false;
+		
+		// Create population line chart
+		float chartXAn = (float) (pro.width * 0.81);
+		float chartYAn = (float) (pro.height * 0.65);
+		float chartWidthAn = (float) (pro.width * 0.18);
+		float chartHeightAn = (float) (pro.height * 0.25);
+		RectObj anRect = new RectObj(chartXAn, chartYAn, chartWidthAn, chartHeightAn);
+		animalPopulation = new UiLineChart(pro, env, anRect, 1, true);
+		
+		// Create population line chart
+		birthRate = new UiLineChart(pro, env, anRect, 1, true);
+		birthRate.display = false;
 	}
 	
 	public void display() {
@@ -71,6 +101,11 @@ public class UI {
 				pro.image(ui.spriteArray.get(ui.spriteNum), ui.position.x, ui.position.y, ui.position.width, ui.position.height);
 		}
 		showAnimalViewPort();
+		
+		// Show charts
+		fpsLineChart.show();
+		animalPopulation.show();
+		birthRate.show();
 	}
 	
 	private PImage getReversePImage( PImage image ) {
@@ -108,7 +143,7 @@ public class UI {
 	public void showAnimalChart(Animal an) {
 		barCharts.clear();
 		RectObj position = new RectObj(pro.width * 0.8f, pro.height * 0.45f, pro.width * 0.2f, pro.height * 0.2f);
-		UiBarChart barChart = new UiBarChart(new BarChart(pro), position, an);
+		UiBarChart barChart = new UiBarChart(position, an, pro);
 		barCharts.add(barChart);
 	}
 	

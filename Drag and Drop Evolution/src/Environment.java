@@ -14,16 +14,16 @@ public class Environment {
 	// Environment dimensions
 	int x, y, width, height;
 	// Starting population animal count
-	int numOfAnimals = 100;
+	int numOfAnimals = 1;
 	// Max size of animals
-	float maxObjectSize = 10f;
+	float maxObjectSize = 24f;
 	// Amount of food
 	int foodPerEvent = 10;
 	// Ms per food event
 	float msPerFoodEvent = 2000;
 	float originalFoodPerEvent = msPerFoodEvent;
 	// Counter to track time till next food spawn
-	int foodCounter = 0;
+	int foodCounter = 2000;
 	// Use a hash grid
 	boolean useHashGrid = true;
 	// Hashgrid
@@ -32,6 +32,8 @@ public class Environment {
 	RectObj env;
 	// Ui interaction
 	UI userInterface;
+	// UI setting
+	float speedMultiplier = 1;
 	
 	ArrayList<Animal> animals = new ArrayList<Animal>();
 	ArrayList<Food> foodArray = new ArrayList<Food>();
@@ -52,14 +54,34 @@ public class Environment {
 			hashGrid = new HashGrid<EnvironmentObject>(env.topX, env.topY, maxObjectSize * 2 + 1);
 		}
 		
-		// Create the animals
-		for(int i = 0; i < numOfAnimals; i++) {
-			addAnimal();
-		}
+		createAnimals();
 		
 	}
 	
+	private void createAnimals() {
+		// Create the animals
+		for(int i = 0; i < numOfAnimals; i++) {
+			addAnimal(new Gene(null), null);
+		}
+	}
+	
+	public void reset() {
+		animals.clear();
+		foodArray.clear();
+		eggArray.clear();
+		foodCounter = 2000;
+		if(useHashGrid) {
+			hashGrid.removeAll(animals);
+			hashGrid.removeAll(foodArray);
+		}
+		userInterface.animalPopulation.dataPoints.clear();
+		userInterface.birthRate.dataPoints.clear();
+		createAnimals();
+	}
+	
 	void draw(float deltaTime, int lastLoopTime) {
+		deltaTime = deltaTime * speedMultiplier;
+		lastLoopTime = (int) (lastLoopTime * speedMultiplier);
 		//pro.stroke(0);
 		pro.fill(153, 255, 51, 190);
 		pro.noStroke();
@@ -69,7 +91,7 @@ public class Environment {
 		showFood();
 		
 		// Draw the eggs
-		showEggs();
+		showEggs(lastLoopTime);
 		
 		// Iterate over the loop backwards so that we can remove animals from the list
 		for(int i = animals.size()-1; i >= 0; i--) {
@@ -88,9 +110,15 @@ public class Environment {
 			hashGrid.updateAll();
 	}
 	
-	void showEggs() {
-		for (Egg egg : eggArray) {
-			egg.show();
+	void showEggs(int lastLoopTime) {
+		for(int i = eggArray.size()-1; i >= 0; i--) {
+			Egg egg = eggArray.get(i);
+			if(egg.hatch(lastLoopTime)) {
+				addAnimal(egg.gene, egg.position);
+				eggArray.remove(egg);
+			} else {
+				egg.show();
+			}
 		}
 	}
 	
@@ -110,7 +138,6 @@ public class Environment {
 		}
 	}
 	
-	
 	void showFood() {
 		if(foodCounter > msPerFoodEvent && msPerFoodEvent != -1) {
 			// Produce food
@@ -129,20 +156,20 @@ public class Environment {
 		}
 	}
 	
-	void addAnimal() {
-		animals.add(new Animal(pro, animals, foodArray, env, hashGrid, imageManager, new Gene(null)));
+	void addAnimal(Gene gene, PVector eggPos) {
+		animals.add(new Animal(pro, animals, foodArray, env, hashGrid, imageManager, gene, eggPos));
 		if(useHashGrid) {
 			hashGrid.add(animals.get(animals.size() -1));
 		}
 	}
 	
-	void clickOnEnv(PVector mouse) {
-		if(withinEnv(mouse)) {
+	void clickOnEnv(PVector mouseZoomed, PVector mouseUnzoomed) {
+		if(withinEnv(mouseUnzoomed)) {
 			Animal an = null;
 			if(hashGrid != null) {
-				an = checkForAnimalCollisions(mouse, null);
+				an = checkForAnimalCollisions(mouseZoomed, null);
 			} else {
-				an = checkForAnimalCollisions(mouse, animals);
+				an = checkForAnimalCollisions(mouseZoomed, animals);
 			}
 			// Send the selected animal to the user interface
 			unselectAllAnimals();
@@ -193,19 +220,7 @@ public class Environment {
 	}
 	
 	public void changeSpeedMultiplierInEnv(double multiplier) {
-		if(multiplier == 0) {
-			msPerFoodEvent = -1;
-		} else {
-			msPerFoodEvent = (float) (originalFoodPerEvent / multiplier);
-		}
-		// Change speed for animals
-		for (Animal an : animals) {
-			an.speedMultiplier = (float) multiplier;
-		}
-		// Change speed for eggs
-		for(Egg egg : eggArray) {
-			egg.speedMultiplier = (float) multiplier;
-		}
+		speedMultiplier = (float) multiplier;
 	}
 	
 	public void setUi(UI ui) {

@@ -7,27 +7,29 @@ import processing.core.PVector;
 
 public class Egg extends EnvironmentObject {
 	Gene gene;
-	double mutationRate = 0.05;
-	int timeTillHatch;
+	int timeTillHatch = 5000;
 	
-	// For Speeding up from the UI
-	float speedMultiplier = 1;
 	
 	Egg(PApplet pro, RectObj env, ArrayList<Animal> animals, ArrayList<Food> foodArray,
-			HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager, Gene gene, PVector pos) {
+			HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager, Gene parentGene, PVector pos) {
 		super(pro, env, animals, foodArray, hashGrid, imageManager);
 		position.x = pos.x;
 		position.y = pos.y;
+		//hashGrid.add(this);
+		
+		// Mutate genes
+		this.gene = new Gene(parentGene);
 		this.colour = gene.colour;
-		width = gene.size;
+		width = (float) gene.size;
 	}
 	
-	private void mutateGenes() {
-		
-	}
-	
-	private void mutateColorTint() {
-		
+	public boolean hatch(int lastLoopTime) {
+		timeTillHatch = timeTillHatch - lastLoopTime;
+		if(timeTillHatch < 0) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 	@Override

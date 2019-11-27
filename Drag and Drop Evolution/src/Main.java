@@ -1,12 +1,11 @@
 import processing.core.PApplet;
 import processing.core.PVector;
 
-import java.util.ArrayList;
 import org.gicentre.utils.FrameTimer;
 import org.gicentre.utils.stat.XYChart;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 1.2";
+	String versionNumber = "Alpha 1.3";
 	
 	// Screen dimensions
 	int scWidth;
@@ -28,11 +27,9 @@ public class Main extends PApplet {
 	Environment env;
 	UI userInterface;
 
-	// Graph
-	XYChart fpsChart;
-	ArrayList <PVector> fpsArray = new ArrayList<PVector>();
+	// Graph features
 	float secondCount = 0;
-	RectObj fpsRect;
+	XYChart lineChart;
 
 	public static void main(String[] args) {
 		PApplet.main( new String[] { "Main" } );
@@ -51,6 +48,13 @@ public class Main extends PApplet {
 		
 		width = scWidth;
 		height = scHeight;
+	}
+	
+	public void setup() {
+		// Set the window name
+		surface.setTitle(versionNumber);
+		// Create the frame rate timer, reports every 60 frames
+		timer = new FrameTimer(0, 1);
 		
 		// 0.2 is 20% offset
 		double offset = 0.2;
@@ -62,36 +66,9 @@ public class Main extends PApplet {
 		
 		RectObj envArea = new RectObj(envX, envY, envWidth, envHeight);
 		env = new Environment(this, envArea);
-		
 		// Load images
 		userInterface = new UI(this, env, offset);
 		env.setUi(userInterface);
-		
-	}
-	
-	public void setup() {
-		// Set the window name
-		surface.setTitle(versionNumber);
-		// Create the frame rate timer, reports every 60 frames
-		timer = new FrameTimer(0, 1);
-		// Create the chart
-		fpsChart = new XYChart(this);
-		fpsChart.showYAxis(true);
-		fpsChart.showXAxis(true);
-		fpsChart.setAxisValuesColour(color(0,0,0,0));
-		fpsChart.setAxisColour(color(0,0,0,0));
-		fpsChart.setPointColour(color(0,0,0,0));
-		fpsChart.setPointSize(0);
-		fpsChart.setLineColour(color(255, 0, 0));
-		fpsChart.setMaxY(60);
-		fpsChart.setMinY(0);
-		fpsChart.setLineWidth(2);
-		//lineChart
-		float chartX = (float) (scWidth * 0.8);
-		float chartY = (float) (scHeight * 0.2);
-		float chartWidth = (float) (scWidth * 0.2);
-		float chartHeight = (float) (scHeight * 0.7);
-		fpsRect = new RectObj(chartX, chartY, chartWidth, chartHeight);
 		
 		frameRate(60);
 		drawBackground();
@@ -117,8 +94,8 @@ public class Main extends PApplet {
 		timer.update();
 		int lastLoopTime = currentMillis - lastMillis;
 		float deltaTime = getDeltaTime(lastLoopTime);
-		millisCount += lastLoopTime;
-		if(millisCount > 1000) {
+		millisCount += lastLoopTime * env.speedMultiplier;
+		if(millisCount > 2000) {
 			secondPassedFrame = true;
 			millisCount = 0;
 			secondCount++;
@@ -134,9 +111,10 @@ public class Main extends PApplet {
 		env.showSelectedAnimal();
 		userInterface.zoomEnd();
 		
+		addDataToCharts();
 		userInterface.display();
 		// Draw Text
-		String numOfAnimalsString = "Number of objects: " + env.animals.size();
+		String numOfAnimalsString = "Number of animals: " + env.animals.size();
 		textSize(scWidth/30);
 		fill(0,0,0);
 		text(numOfAnimalsString, (float) (scWidth * 0.05), (float) (scHeight * 0.08));
@@ -144,16 +122,20 @@ public class Main extends PApplet {
 		// Draw framerate
 		showFPS();
 		
-		// Show charts
-		showCharts();
-		
 		lastMillis = currentMillis;
 		secondPassedFrame = false;
 	}
 	
 	public void keyPressed() {
 		if (key == 'f' || key == 'F')
-			showFPSGraph = !showFPSGraph;
+			userInterface.fpsLineChart.display = !userInterface.fpsLineChart.display;
+		else if (key == 'c' || key == 'C')
+			env.reset();
+		else if(key == 'b' || key == 'B') {
+			userInterface.animalPopulation.display = !userInterface.animalPopulation.display;
+			userInterface.birthRate.display = !userInterface.birthRate.display;
+		}
+			
 	}
 	
 	public void mousePressed() {
@@ -168,18 +150,8 @@ public class Main extends PApplet {
 				userInterface.zoomer.setMouseMask(-1);
 			}
 			
-			env.clickOnEnv(mouseZoomed);
+			env.clickOnEnv(mouseZoomed, mouseUi);
 			userInterface.checkCollisions(mouseUi);
-		}
-	}
-	
-	public void showCharts() {
-		//noStroke
-		//fill(255, 255, 255, 50);
-		//rect(chartRect.x, chartRect.y, chartRect.width, chartRect.height + 10);
-		if(showFPSGraph) {
-			textSize(10);
-			fpsChart.draw(fpsRect.x, fpsRect.y, fpsRect.width, fpsRect.height);
 		}
 	}
 	
@@ -190,13 +162,26 @@ public class Main extends PApplet {
 			fill(0, 0, 0);
 		    text(fps+" fps", (float) (scWidth * 0.8), (float) (scHeight * 0.08));
 		}
+	}
+	
+	public void addDataToCharts() {
 		// Add to the chart array
 		if(secondPassedFrame) {
-			PVector graphNode = new PVector(secondCount, timer.getFrameRate());
-			fpsArray.add(graphNode);
-			fpsChart.setData(fpsArray);
-			//env.addAnimal();
+			// FPS Chart
+			userInterface.fpsLineChart.addData(secondCount, timer.getFrameRate());
 			fps = timer.getFrameRateAsText();
+			// Animal population
+			userInterface.animalPopulation.addData(secondCount, env.animals.size());
+			userInterface.birthRate.addData(secondCount, calculateAverageBirthRateInSeconds());
 		}
+	}
+	
+	public float calculateAverageBirthRateInSeconds() {
+		float totalLifeSpan = 0;
+		for (Animal an : env.animals) {
+			totalLifeSpan += an.startingLifeSpan;
+		}
+		float returnVal = totalLifeSpan / (env.animals.size() * 1000);
+		return returnVal;
 	}
 }

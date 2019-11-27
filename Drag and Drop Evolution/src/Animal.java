@@ -18,17 +18,16 @@ public class Animal extends EnvironmentObject {
 	float coinToss;
 	
 	// Life span
-	float startingLifeSpan = 60000;
-	float lifeSpanInMs = startingLifeSpan;
+	float startingLifeSpan;
+	float lifeSpanInMs;
 	float startDyingPercentageOfLife = 0.2f;
 
 	// Food
 	float timeTillStarve;
 	float startingTimeTillStarve;
 	float whenGetHungryMs = 1000;
-	
-	// UI setting
-	float speedMultiplier = 1;
+	boolean didStarve = false;
+	boolean eatenOnce = false;
 	
 	// Reproduction
 	float startingTimeTillLayEgg;
@@ -41,11 +40,13 @@ public class Animal extends EnvironmentObject {
 	// This processor object allows us to access Processor methods outside of the main class
 	//PApplet pro;
 	
-	Animal(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, RectObj env, HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager, Gene gene){
+	Animal(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, RectObj env, HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager, Gene gene, PVector eggPos){
 		// Add the processing applet into the class
 		super(parent, env, animals, foodArray, hashGrid, imageManager);
 		this.gene = gene;
-		this.width = gene.size;
+		this.width = (float) gene.size;
+		this.startingLifeSpan = (float) gene.lifeSpan;
+		this.lifeSpanInMs = startingLifeSpan;
 
 		// Set the attributes
 		// This is technically a bug, can get situations where certain animals have the same id
@@ -54,16 +55,20 @@ public class Animal extends EnvironmentObject {
 		// Survival
 		int placeAttempts = 20;
 		
-		do {
-			position.x = pro.random(env.x, env.topX - width);
-			position.y = pro.random(env.y, env.topY - width);
-			placeAttempts--;
-			if(placeAttempts < 0) {
-				placeAttempts = 20;
-				width--;
-			}
-		} while (collide(position) && width > 0);
-		
+		if(eggPos == null) {
+			do {
+				position.x = pro.random(env.x, env.topX - width);
+				position.y = pro.random(env.y, env.topY - width);
+				placeAttempts--;
+				if(placeAttempts < 0) {
+					placeAttempts = 20;
+					width--;
+				}
+			} while (collide(position) && width > 0);
+		} else {
+			position.x = eggPos.x;
+			position.y = eggPos.y;
+		}
 		
 		// Set random colour
 		if(gene.colour == null) {
@@ -76,7 +81,7 @@ public class Animal extends EnvironmentObject {
 		}
 		
 		// Movement
-		movementSpeed = gene.speed;
+		movementSpeed = (float) gene.speed;
 		direction = getRandomAngle();
 		
 		// Time till starve
@@ -89,14 +94,16 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	float calculateBirthRate() {
-		return startingLifeSpan/3 - 5000;
+		return startingLifeSpan/3;
 	}
 	
 	float calculateStarveTime() {
 		// y = x/12 and y = x/50, graphs for the starve time
-		float sizeMultiplier = 12/width;
-		float agilityMultiplier = 50/gene.speed;
-		return 15000 * sizeMultiplier * agilityMultiplier;
+		float smallBonus = 12000 - 1000 * this.width;
+		float slowBonus = 50000 - 1000 * this.movementSpeed;
+		float lifeSpanBonus = (float) ((60000 - gene.lifeSpan)/10); 
+		//float lifeSpanMultiplier = (float) (gene.lifeSpan/60000);
+		return 15000 + smallBonus + slowBonus + lifeSpanBonus;
 	}
 	
 	float getPixelsFromPercentWidth(float percentOfScreenWidth) {
@@ -106,6 +113,7 @@ public class Animal extends EnvironmentObject {
 	void move(float deltaTime) {
 		PVector aimVector = getAimVector(deltaTime);
 		if(collide(aimVector)) {
+			notEnoughSpace();
 			adjustAngle();
 		} else {
 			setAimVectorAsLocation(aimVector);
@@ -113,18 +121,19 @@ public class Animal extends EnvironmentObject {
 		isOutOfBounds();
 	}
 	
+	void notEnoughSpace() {
+		timeTillStarve = (float) (timeTillStarve - (startingTimeTillStarve * 0.1));
+	}
+	
 	Egg reproduce(int lastLoopTime) {
 		// If no food in belly
-		if(!(hasFoodInBelly())) {
-			// Restart the egg timer
-			timeTillLayEgg = startingTimeTillLayEgg;
-		} else {
+		if(hasFoodInBelly()) {
 			// Update the timer
 			timeTillLayEgg = timeTillLayEgg - lastLoopTime;
 		}
 		
 		// Check if can lay egg
-		if(timeTillLayEgg < 0) {
+		if(timeTillLayEgg < 0 && eatenOnce) {
 			// Lay egg
 			timeTillLayEgg = startingTimeTillLayEgg;
 			return new Egg(pro, env, animals, foodArray, hashGrid, imageManager, gene, position);
@@ -141,12 +150,13 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	boolean hasFoodInBelly() {
-		return (timeTillStarve / startingTimeTillStarve > 0.10f);
+		// Must have at least 30% food or the egg counter will restart
+		return (timeTillStarve / startingTimeTillStarve > 0.50f);
 	}
 	
 	private PVector getAimVector(float deltaTime) {		
 		//Time based animation
-		float movementWithDelta = movementSpeed * deltaTime * speedMultiplier;
+		float movementWithDelta = movementSpeed * deltaTime;
 		
 		// Frame based animation
 		float aimX = position.x + movementWithDelta * PApplet.sin(direction);
@@ -184,8 +194,6 @@ public class Animal extends EnvironmentObject {
 		float elderlySpeed = movementSpeed;
 		float hungerSpeed = movementSpeed;
 		
-		lastLoopTime = lastLoopTime * speedMultiplier;
-
 		lifeSpanInMs = lifeSpanInMs - lastLoopTime;
 		timeTillStarve = timeTillStarve - lastLoopTime;
 		
@@ -194,12 +202,12 @@ public class Animal extends EnvironmentObject {
 		if(lifeRemaining < startDyingPercentageOfLife && lifeSpanInMs > 0) {
 			// Creature starts dying so calculate the speed reduction
 			float movementMultiplier = lifeRemaining / startDyingPercentageOfLife;
-			elderlySpeed = gene.speed * movementMultiplier;
+			elderlySpeed = (float) (gene.speed * movementMultiplier);
 		}
 		
 		// Hungry check
 		if(timeTillStarve < whenGetHungryMs) {
-			hungerSpeed = gene.speed * (timeTillStarve / whenGetHungryMs);
+			hungerSpeed = (float) (gene.speed * (timeTillStarve / whenGetHungryMs));
 		}
 		
 		// Check which movement decrease is largest
@@ -215,8 +223,9 @@ public class Animal extends EnvironmentObject {
 		}
 		
 		// Starve check
-		if(timeTillStarve < 0 && lifeSpanInMs > 0) {
+		if(timeTillStarve < 0 && lifeSpanInMs > 0 && !isDead) {
 			lifeSpanInMs = 0;
+			didStarve = true;
 			die();
 			return true;
 		}
@@ -240,7 +249,8 @@ public class Animal extends EnvironmentObject {
 	
 	public void removeFromEnvironment() {
 		removeAnimalFromArray();
-		addFoodAtDeathLocation();
+		if(!didStarve)
+			addFoodAtDeathLocation();
 	}
 	
 	private void removeAnimalFromArray() {
@@ -296,9 +306,10 @@ public class Animal extends EnvironmentObject {
 	
 	public void eat(Food food, HashGrid<EnvironmentObject> hashGrid) {
 		timeTillStarve += food.width * 2000;
+		eatenOnce = true;
 		if(timeTillStarve > startingTimeTillStarve) {
 			timeTillStarve = startingTimeTillStarve;
-			movementSpeed = gene.speed;
+			movementSpeed = (float) gene.speed;
 		}
 		foodArray.remove(food);
 		if(hashGrid != null) {
@@ -347,7 +358,11 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	public float normaliseSpeed() {
-		return movementSpeed / gene.speed;
+		return (float) (movementSpeed / gene.speed);
+	}
+	
+	public float normaliseEggTime() {
+		return timeTillLayEgg / startingTimeTillLayEgg;
 	}
 	
 }
