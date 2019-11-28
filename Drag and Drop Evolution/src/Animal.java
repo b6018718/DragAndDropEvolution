@@ -4,6 +4,7 @@ import java.util.HashSet;
 import org.gicentre.utils.geom.HashGrid;
 
 import processing.core.PApplet;
+import processing.core.PConstants;
 import processing.core.PVector;
 import java.util.Set;
 
@@ -69,6 +70,7 @@ public class Animal extends EnvironmentObject {
 			position.x = eggPos.x;
 			position.y = eggPos.y;
 		}
+		setHashPos();
 		
 		// Set random colour
 		if(gene.colour == null) {
@@ -119,6 +121,7 @@ public class Animal extends EnvironmentObject {
 			setAimVectorAsLocation(aimVector);
 		}
 		isOutOfBounds();
+		setHashPos();
 	}
 	
 	void notEnoughSpace() {
@@ -169,6 +172,7 @@ public class Animal extends EnvironmentObject {
 		keepTurning = false;
 		position.x = aimVector.x;
 		position.y = aimVector.y;
+		setHashPos();
 	}
 	
 	public void adjustAngle() {
@@ -203,11 +207,15 @@ public class Animal extends EnvironmentObject {
 			// Creature starts dying so calculate the speed reduction
 			float movementMultiplier = lifeRemaining / startDyingPercentageOfLife;
 			elderlySpeed = (float) (gene.speed * movementMultiplier);
+		} else {
+			elderlySpeed = (float) gene.speed;
 		}
 		
 		// Hungry check
 		if(timeTillStarve < whenGetHungryMs) {
 			hungerSpeed = (float) (gene.speed * (timeTillStarve / whenGetHungryMs));
+		} else {
+			hungerSpeed = (float) gene.speed;
 		}
 		
 		// Check which movement decrease is largest

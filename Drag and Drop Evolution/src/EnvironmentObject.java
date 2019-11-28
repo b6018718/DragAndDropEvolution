@@ -8,6 +8,7 @@ import processing.core.PVector;
 
 public abstract class EnvironmentObject implements Locatable {
 	protected PVector position = new PVector();
+	protected PVector hashPos = new PVector();
 	protected Color colour = new Color();
 	protected PApplet pro;
 	protected float width;
@@ -25,10 +26,17 @@ public abstract class EnvironmentObject implements Locatable {
 		this.foodArray = foodArray;
 		this.hashGrid = hashGrid;
 		this.imageManager = imageManager;
+		setHashPos();
 	}
 	
+	// Needed for hash grid
 	public PVector getLocation(){
-	    return position;
+	    return hashPos;
+	}
+	
+	public void setHashPos() {
+		hashPos.x = position.x + width/2;
+		hashPos.y = position.y + width/2;
 	}
 	
 	public void show() {

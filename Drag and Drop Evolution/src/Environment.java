@@ -66,16 +66,16 @@ public class Environment {
 	}
 	
 	public void reset() {
-		animals.clear();
-		foodArray.clear();
-		eggArray.clear();
-		foodCounter = 2000;
 		if(useHashGrid) {
 			hashGrid.removeAll(animals);
 			hashGrid.removeAll(foodArray);
 		}
-		userInterface.animalPopulation.dataPoints.clear();
-		userInterface.birthRate.dataPoints.clear();
+		animals.clear();
+		foodArray.clear();
+		eggArray.clear();
+		foodCounter = 2000;
+		
+		userInterface.clearCharts();
 		createAnimals();
 	}
 	

@@ -41,13 +41,16 @@ public class Gene {
 	}
 	
 	private void mutateColor(Color parentColour) {
-		double redShift = randomColourMutation();
-		double greenShift = randomColourMutation();
-		double blueShift = randomColourMutation();
+		//double redShift = randomColourMutation();
+		//double greenShift = randomColourMutation();
+		//double blueShift = randomColourMutation();
 		
-		colour.r = preventColourOverflow((int) (parentColour.r * redShift));
-		colour.g = preventColourOverflow((int) (parentColour.g * greenShift));
-		colour.b = preventColourOverflow((int) (parentColour.b * blueShift));
+		//colour.r = preventColourOverflow((int) (parentColour.r * redShift));
+		//colour.g = preventColourOverflow((int) (parentColour.g * greenShift));
+		//colour.b = preventColourOverflow((int) (parentColour.b * blueShift));
+		colour.r = (int) random(0, 255);
+		colour.g = (int) random(0,255);
+		colour.b = (int) random(0, 255);
 	}
 	
 	private double randomMutationChange() {

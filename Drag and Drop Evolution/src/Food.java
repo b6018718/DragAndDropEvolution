@@ -18,6 +18,8 @@ public class Food extends EnvironmentObject {
 		} else {
 			position = startingLoc;
 		}
+		setHashPos();
+
 		
 		// Set the colour
 		colour.r = 0;

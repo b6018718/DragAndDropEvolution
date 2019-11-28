@@ -4,8 +4,11 @@ import processing.core.PVector;
 import org.gicentre.utils.FrameTimer;
 import org.gicentre.utils.stat.XYChart;
 
+import g4p_controls.GDropList;
+import g4p_controls.GEvent;
+
 public class Main extends PApplet {
-	String versionNumber = "Alpha 1.3";
+	String versionNumber = "Alpha 1.4";
 	
 	// Screen dimensions
 	int scWidth;
@@ -15,6 +18,7 @@ public class Main extends PApplet {
 	// Animation frames
 	int lastMillis = millis();
 	int millisCount = 0;
+	// Is the first frame when a second has passed in time
 	boolean secondPassedFrame = false;
 	String fps = "";
 	// Delta upper and lower limits
@@ -95,7 +99,7 @@ public class Main extends PApplet {
 		int lastLoopTime = currentMillis - lastMillis;
 		float deltaTime = getDeltaTime(lastLoopTime);
 		millisCount += lastLoopTime * env.speedMultiplier;
-		if(millisCount > 2000) {
+		if(millisCount > 5000) {
 			secondPassedFrame = true;
 			millisCount = 0;
 			secondCount++;
@@ -173,6 +177,8 @@ public class Main extends PApplet {
 			// Animal population
 			userInterface.animalPopulation.addData(secondCount, env.animals.size());
 			userInterface.birthRate.addData(secondCount, calculateAverageBirthRateInSeconds());
+			userInterface.sizeChart.addData(secondCount, calculateAverageSize());
+			userInterface.speedChart.addData(secondCount, calculateAverageSpeed());
 		}
 	}
 	
@@ -183,5 +189,27 @@ public class Main extends PApplet {
 		}
 		float returnVal = totalLifeSpan / (env.animals.size() * 1000);
 		return returnVal;
+	}
+	
+	public float calculateAverageSize() {
+		float totalSize = 0;
+		for (Animal an : env.animals) {
+			totalSize += an.width;
+		}
+		float returnVal = totalSize / env.animals.size();
+		return returnVal;
+	}
+	
+	public float calculateAverageSpeed() {
+		float totalSpeed = 0;
+		for (Animal an : env.animals) {
+			totalSpeed += an.movementSpeed;
+		}
+		float returnVal = totalSpeed / env.animals.size();
+		return returnVal;
+	}
+	
+	public void handleDropListEvents(GDropList list, GEvent event) {
+		userInterface.handleDropListEvents(list, event);
 	}
 }

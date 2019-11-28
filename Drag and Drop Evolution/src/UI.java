@@ -2,6 +2,7 @@ import java.util.ArrayList;
 
 import org.gicentre.utils.stat.XYChart;
 
+import g4p_controls.*;
 import processing.core.PApplet;
 import processing.core.PConstants;
 import processing.core.PGraphics;
@@ -16,9 +17,20 @@ public class UI {
 	ArrayList<UiBarChart> barCharts = new ArrayList<UiBarChart>();
 	
 	// Line Charts
+	ArrayList<UiLineChart> uiLineCharts = new ArrayList<UiLineChart>();
 	UiLineChart fpsLineChart;
 	UiLineChart animalPopulation;
 	UiLineChart birthRate;
+	UiLineChart sizeChart;
+	UiLineChart speedChart;
+	
+	// Drop downs
+	GDropList graphSelect;
+	final String POPULATION = "Population";
+	final String LIFESPAN = "Lifespan";
+	final String SIZE = "Size";
+	final String SPEED = "Speed";
+	final String FRAMERATE = "Framerate";
 	
 	Environment env;
 	PImage viewPort;
@@ -36,10 +48,17 @@ public class UI {
 		this.env = env;
 		this.uiOffset = uiOffset;
 		
+		String [] items;
+		
+		graphSelect = new GDropList(pro, pro.width * 0.85f, pro.height * 0.6f, pro.width * 0.1f, pro.height * 0.25f, 4);
+		items = new String [] {POPULATION, LIFESPAN, SIZE, SPEED, FRAMERATE};
+		graphSelect.setItems(items, 0);
+		graphSelect.tag = "graphSelect";
+		
 		//Set up zoomer 
 		zoomer = new ZoomPan(pro);  // Initialise the zoomer
 		zoomer.setMinZoomScale(1);
-		zoomer.setMaxZoomScale(2.5);
+		zoomer.setMaxZoomScale(2.2);
 		//zoomer.setMouseMask(PConstants.SHIFT);
 		
 		// Speed Up Button
@@ -66,8 +85,8 @@ public class UI {
 		float chartWidth = (float) (pro.width * 0.2);
 		float chartHeight = (float) (pro.height * 0.7);
 		RectObj fpsRect = new RectObj(chartX, chartY, chartWidth, chartHeight);
-		fpsLineChart = new UiLineChart(pro, env, fpsRect, 60, false);
-		fpsLineChart.display = false;
+		//fpsLineChart = new UiLineChart(pro, env, fpsRect, 60, false);
+		//fpsLineChart.display = false;
 		
 		// Create population line chart
 		float chartXAn = (float) (pro.width * 0.81);
@@ -75,11 +94,52 @@ public class UI {
 		float chartWidthAn = (float) (pro.width * 0.18);
 		float chartHeightAn = (float) (pro.height * 0.25);
 		RectObj anRect = new RectObj(chartXAn, chartYAn, chartWidthAn, chartHeightAn);
+		
 		animalPopulation = new UiLineChart(pro, env, anRect, 1, true);
+		
+		// Frame rate chart
+		fpsLineChart = new UiLineChart(pro, env, anRect, 60, true);
+		fpsLineChart.display = false;
 		
 		// Create population line chart
 		birthRate = new UiLineChart(pro, env, anRect, 1, true);
 		birthRate.display = false;
+		
+		sizeChart = new UiLineChart(pro, env, anRect, 1, true);
+		sizeChart.display = false;
+		
+		speedChart = new UiLineChart(pro, env, anRect, 1, true);
+		speedChart.display = false;
+		
+		uiLineCharts.add(animalPopulation);
+		uiLineCharts.add(birthRate);
+		uiLineCharts.add(sizeChart);
+		uiLineCharts.add(speedChart);
+		uiLineCharts.add(fpsLineChart);
+	}
+	
+	public void handleDropListEvents(GDropList list, GEvent event) {
+		String selectedItem = list.getSelectedText();
+		if(list == graphSelect) {
+			hideAllGraphs();
+			switch(selectedItem) {
+			case POPULATION:
+				animalPopulation.display = true;
+				break;
+			case LIFESPAN:
+				birthRate.display = true;
+				break;
+			case SPEED:
+				speedChart.display = true;
+				break;
+			case SIZE:
+				sizeChart.display = true;
+				break;
+			case FRAMERATE:
+				fpsLineChart.display = true;
+				break;
+			}
+		}
 	}
 	
 	public void display() {
@@ -88,7 +148,6 @@ public class UI {
 		pro.noStroke();
 		pro.rect(0f, 0f, (float) pro.width, (float) (pro.height * uiOffset));
 		pro.rect((float) (pro.width * (1 - uiOffset)), 0f, (float) (pro.width * uiOffset), (float) pro.height);
-		
 		
 		// Display Bar Charts
 		for (UiBarChart barChart : barCharts) {
@@ -103,9 +162,25 @@ public class UI {
 		showAnimalViewPort();
 		
 		// Show charts
-		fpsLineChart.show();
-		animalPopulation.show();
-		birthRate.show();
+		showCharts();
+	}
+	
+	private void hideAllGraphs() {
+		for (UiLineChart lineChart : uiLineCharts) {
+			lineChart.display = false;
+		}
+	}
+	
+	private void showCharts() {
+		for (UiLineChart lineChart : uiLineCharts) {
+			lineChart.show();
+		}
+	}
+	
+	public void clearCharts() {
+		for (UiLineChart chart : uiLineCharts) {
+			chart.dataPoints.clear();
+		}
 	}
 	
 	private PImage getReversePImage( PImage image ) {
@@ -142,7 +217,7 @@ public class UI {
 	
 	public void showAnimalChart(Animal an) {
 		barCharts.clear();
-		RectObj position = new RectObj(pro.width * 0.8f, pro.height * 0.45f, pro.width * 0.2f, pro.height * 0.2f);
+		RectObj position = new RectObj(pro.width * 0.8f, pro.height * 0.4f, pro.width * 0.2f, pro.height * 0.2f);
 		UiBarChart barChart = new UiBarChart(position, an, pro);
 		barCharts.add(barChart);
 	}
