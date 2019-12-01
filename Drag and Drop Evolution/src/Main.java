@@ -4,6 +4,7 @@ import processing.core.PVector;
 import org.gicentre.utils.FrameTimer;
 import org.gicentre.utils.stat.XYChart;
 
+import g4p_controls.GButton;
 import g4p_controls.GDropList;
 import g4p_controls.GEvent;
 
@@ -17,7 +18,6 @@ public class Main extends PApplet {
 	FrameTimer timer;
 	// Animation frames
 	int lastMillis = millis();
-	int millisCount = 0;
 	// Is the first frame when a second has passed in time
 	boolean secondPassedFrame = false;
 	String fps = "";
@@ -32,7 +32,10 @@ public class Main extends PApplet {
 	UI userInterface;
 
 	// Graph features
-	float secondCount = 0;
+	int saveDataPerSecond = 5;
+	int saveDataPerMs = saveDataPerSecond * 1000;
+	float secondCount = -saveDataPerSecond;
+	int millisCount = saveDataPerMs - 2500;
 	XYChart lineChart;
 
 	public static void main(String[] args) {
@@ -99,10 +102,10 @@ public class Main extends PApplet {
 		int lastLoopTime = currentMillis - lastMillis;
 		float deltaTime = getDeltaTime(lastLoopTime);
 		millisCount += lastLoopTime * env.speedMultiplier;
-		if(millisCount > 5000) {
+		if(millisCount > saveDataPerMs) {
 			secondPassedFrame = true;
 			millisCount = 0;
-			secondCount++;
+			secondCount = secondCount + saveDataPerSecond;
 		}
 		
 		// Sets the boundaries for the panning so that it doesn't allow the screen to go outside the play area
@@ -138,8 +141,7 @@ public class Main extends PApplet {
 		else if(key == 'b' || key == 'B') {
 			userInterface.animalPopulation.display = !userInterface.animalPopulation.display;
 			userInterface.birthRate.display = !userInterface.birthRate.display;
-		}
-			
+		}	
 	}
 	
 	public void mousePressed() {
@@ -179,10 +181,15 @@ public class Main extends PApplet {
 			userInterface.birthRate.addData(secondCount, calculateAverageBirthRateInSeconds());
 			userInterface.sizeChart.addData(secondCount, calculateAverageSize());
 			userInterface.speedChart.addData(secondCount, calculateAverageSpeed());
+			userInterface.foodChart.addData(secondCount, env.foodArray.size());
 		}
 	}
 	
 	public float calculateAverageBirthRateInSeconds() {
+		if(env.animals.size() == 0) {
+			return 0;
+		}
+			
 		float totalLifeSpan = 0;
 		for (Animal an : env.animals) {
 			totalLifeSpan += an.startingLifeSpan;
@@ -192,6 +199,10 @@ public class Main extends PApplet {
 	}
 	
 	public float calculateAverageSize() {
+		if(env.animals.size() == 0) {
+			return 0;
+		}
+		
 		float totalSize = 0;
 		for (Animal an : env.animals) {
 			totalSize += an.width;
@@ -201,6 +212,10 @@ public class Main extends PApplet {
 	}
 	
 	public float calculateAverageSpeed() {
+		if(env.animals.size() == 0) {
+			return 0;
+		}
+		
 		float totalSpeed = 0;
 		for (Animal an : env.animals) {
 			totalSpeed += an.movementSpeed;
@@ -211,5 +226,13 @@ public class Main extends PApplet {
 	
 	public void handleDropListEvents(GDropList list, GEvent event) {
 		userInterface.handleDropListEvents(list, event);
+	}
+	
+	public void handleButtonEvents(GButton button, GEvent event) {
+		userInterface.handleButtonEvents(button, event);
+	}
+	
+	public void saveTableThread() {
+		userInterface.saveTableThread();
 	}
 }

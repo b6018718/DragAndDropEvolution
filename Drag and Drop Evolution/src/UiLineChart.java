@@ -14,14 +14,16 @@ public class UiLineChart {
 	boolean display = true;
 	boolean resize = true;
 	float maximumY;
+	String graphName;
 	
-	public UiLineChart(PApplet pro, Environment env, RectObj sizeRect, float startingY, boolean resize){
+	public UiLineChart(PApplet pro, Environment env, RectObj sizeRect, float startingY, boolean resize, String graphName){
 		this.graph = new XYChart(pro);
 		this.pro = pro;
 		this.env = env;
 		this.sizeRect = sizeRect;
 		this.maximumY = startingY;
 		this.resize = resize;
+		this.graphName = graphName;
 		
 		graph.setData(dataPoints);
 		graph.showYAxis(true);

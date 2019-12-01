@@ -1,4 +1,8 @@
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 
 import org.gicentre.utils.stat.XYChart;
 
@@ -8,6 +12,8 @@ import processing.core.PConstants;
 import processing.core.PGraphics;
 import processing.core.PImage;
 import processing.core.PVector;
+import processing.data.Table;
+import processing.data.TableRow;
 
 import org.gicentre.utils.move.*;
 
@@ -23,6 +29,10 @@ public class UI {
 	UiLineChart birthRate;
 	UiLineChart sizeChart;
 	UiLineChart speedChart;
+	UiLineChart foodChart;
+	
+	// Buttons
+	GButton saveAsCsvBtn;
 	
 	// Drop downs
 	GDropList graphSelect;
@@ -31,6 +41,7 @@ public class UI {
 	final String SIZE = "Size";
 	final String SPEED = "Speed";
 	final String FRAMERATE = "Framerate";
+	final String FOOD = "Food";
 	
 	Environment env;
 	PImage viewPort;
@@ -51,7 +62,7 @@ public class UI {
 		String [] items;
 		
 		graphSelect = new GDropList(pro, pro.width * 0.85f, pro.height * 0.6f, pro.width * 0.1f, pro.height * 0.25f, 4);
-		items = new String [] {POPULATION, LIFESPAN, SIZE, SPEED, FRAMERATE};
+		items = new String [] {POPULATION, LIFESPAN, SIZE, SPEED, FRAMERATE, FOOD};
 		graphSelect.setItems(items, 0);
 		graphSelect.tag = "graphSelect";
 		
@@ -79,15 +90,6 @@ public class UI {
 		
 		uiElements.add(speedDownUi);
 		
-		// Create fps line charts
-		float chartX = (float) (pro.width * 0.8);
-		float chartY = (float) (pro.height * 0.2);
-		float chartWidth = (float) (pro.width * 0.2);
-		float chartHeight = (float) (pro.height * 0.7);
-		RectObj fpsRect = new RectObj(chartX, chartY, chartWidth, chartHeight);
-		//fpsLineChart = new UiLineChart(pro, env, fpsRect, 60, false);
-		//fpsLineChart.display = false;
-		
 		// Create population line chart
 		float chartXAn = (float) (pro.width * 0.81);
 		float chartYAn = (float) (pro.height * 0.65);
@@ -95,27 +97,35 @@ public class UI {
 		float chartHeightAn = (float) (pro.height * 0.25);
 		RectObj anRect = new RectObj(chartXAn, chartYAn, chartWidthAn, chartHeightAn);
 		
-		animalPopulation = new UiLineChart(pro, env, anRect, 1, true);
+		animalPopulation = new UiLineChart(pro, env, anRect, 1, true, POPULATION);
 		
 		// Frame rate chart
-		fpsLineChart = new UiLineChart(pro, env, anRect, 60, true);
+		fpsLineChart = new UiLineChart(pro, env, anRect, 60, true, FRAMERATE);
 		fpsLineChart.display = false;
 		
 		// Create population line chart
-		birthRate = new UiLineChart(pro, env, anRect, 1, true);
+		birthRate = new UiLineChart(pro, env, anRect, 1, true, LIFESPAN);
 		birthRate.display = false;
 		
-		sizeChart = new UiLineChart(pro, env, anRect, 1, true);
+		sizeChart = new UiLineChart(pro, env, anRect, 1, true, SIZE);
 		sizeChart.display = false;
 		
-		speedChart = new UiLineChart(pro, env, anRect, 1, true);
+		speedChart = new UiLineChart(pro, env, anRect, 1, true, SPEED);
 		speedChart.display = false;
+		
+		foodChart = new UiLineChart(pro, env, anRect, 1, true, FOOD);
+		foodChart.display = false;
 		
 		uiLineCharts.add(animalPopulation);
 		uiLineCharts.add(birthRate);
 		uiLineCharts.add(sizeChart);
 		uiLineCharts.add(speedChart);
+		uiLineCharts.add(foodChart);
 		uiLineCharts.add(fpsLineChart);
+		
+		// Create buttons
+		saveAsCsvBtn = new GButton(pro, pro.width * 0.85f, pro.height * 0.925f, pro.width * 0.08f, pro.height * 0.05f, "Save As CSV");
+		saveAsCsvBtn.setLocalColorScheme(GCScheme.ORANGE_SCHEME);
 	}
 	
 	public void handleDropListEvents(GDropList list, GEvent event) {
@@ -138,9 +148,43 @@ public class UI {
 			case FRAMERATE:
 				fpsLineChart.display = true;
 				break;
+			case FOOD:
+				foodChart.display = true;
+				break;
 			}
 		}
 	}
+	
+	public void handleButtonEvents(GButton button, GEvent event) {
+		  if (button == saveAsCsvBtn && event == GEvent.CLICKED) {
+			  // Save the table in a different thread
+			  pro.thread("saveTableThread");
+		  }  
+	}
+	
+	public void saveTableThread() {
+		ArrayList<UiLineChart> uiLineChartsSave = new ArrayList<UiLineChart>(uiLineCharts);
+		String filePath = G4P.selectFolder("Select where to save CSV file");
+		Table table = new Table();
+		  // Add columns
+		  table.addColumn("Seconds");
+		  for (UiLineChart chart : uiLineChartsSave) {
+			  table.addColumn(chart.graphName);
+		  }
+		  // Add Rows
+		  for (int i = 0; i < uiLineChartsSave.get(0).dataPoints.size(); i++) {
+			// Create row
+			TableRow newRow = table.addRow();
+			// Add seconds
+			newRow.setFloat("Seconds", uiLineChartsSave.get(0).dataPoints.get(i).x);
+			// Add additional columns
+			for (UiLineChart chart : uiLineChartsSave) {
+				newRow.setFloat(chart.graphName, chart.dataPoints.get(i).y);
+			}
+		  }
+		pro.saveTable(table, filePath + "/evolution_data_" + new SimpleDateFormat("yyyyMMddHHmm").format(new Date()) + ".csv");
+	}
+	
 	
 	public void display() {
 		//Draw UI Boxes
