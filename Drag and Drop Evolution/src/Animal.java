@@ -11,7 +11,7 @@ import java.util.Set;
 public class Animal extends EnvironmentObject {
 	// Properties
 	float standardSize;
-	int direction;
+	float direction;
 	float movementSpeed;
 	int id;
 	boolean keepTurning = false;
@@ -35,20 +35,23 @@ public class Animal extends EnvironmentObject {
 	float timeTillLayEgg;
 	int numberOfChildren = 0;
 	
+	// Machine learning
 	Gene gene;
-	
+	double[] nArgs;
+	double[] weighOptions;
 	
 	// This processor object allows us to access Processor methods outside of the main class
 	//PApplet pro;
 	
-	Animal(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, RectObj env, HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager, Gene gene, PVector eggPos){
+	Animal(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, Environment env, HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager, Gene gene, PVector eggPos){
 		// Add the processing applet into the class
 		super(parent, env, animals, foodArray, hashGrid, imageManager);
 		this.gene = gene;
 		this.width = (float) gene.size;
 		this.startingLifeSpan = (float) gene.lifeSpan;
 		this.lifeSpanInMs = startingLifeSpan;
-
+		
+		
 		// Set the attributes
 		// This is technically a bug, can get situations where certain animals have the same id
 		this.id = animals.size();
@@ -58,8 +61,8 @@ public class Animal extends EnvironmentObject {
 		
 		if(eggPos == null) {
 			do {
-				position.x = pro.random(env.x, env.topX - width);
-				position.y = pro.random(env.y, env.topY - width);
+				position.x = pro.random(env.env.x, env.env.topX - width);
+				position.y = pro.random(env.env.y, env.env.topY - width);
 				placeAttempts--;
 				if(placeAttempts < 0) {
 					placeAttempts = 20;
@@ -96,7 +99,7 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	float calculateBirthRate() {
-		return startingLifeSpan/3;
+		return (startingLifeSpan) /3;
 	}
 	
 	float calculateStarveTime() {
@@ -109,14 +112,17 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	float getPixelsFromPercentWidth(float percentOfScreenWidth) {
-		return env.width * (percentOfScreenWidth / 100);
+		return env.env.width * (percentOfScreenWidth / 100);
 	}
 	
 	void move(float deltaTime) {
+		boolean moveForward = adjustAngle(deltaTime);
+		if(!moveForward)
+			deltaTime = deltaTime * 0.7f;
 		PVector aimVector = getAimVector(deltaTime);
 		if(collide(aimVector)) {
-			notEnoughSpace();
-			adjustAngle();
+			notEnoughSpace(deltaTime);
+			//adjustAngle();
 		} else {
 			setAimVectorAsLocation(aimVector);
 		}
@@ -124,8 +130,8 @@ public class Animal extends EnvironmentObject {
 		setHashPos();
 	}
 	
-	void notEnoughSpace() {
-		timeTillStarve = (float) (timeTillStarve - (startingTimeTillStarve * 0.1));
+	void notEnoughSpace(float deltaTime) {
+		timeTillStarve = (float) (timeTillStarve - (startingTimeTillStarve * 0.1 * deltaTime));
 	}
 	
 	Egg reproduce(int lastLoopTime) {
@@ -162,8 +168,8 @@ public class Animal extends EnvironmentObject {
 		float movementWithDelta = movementSpeed * deltaTime;
 		
 		// Frame based animation
-		float aimX = position.x + movementWithDelta * PApplet.sin(direction);
-		float aimY = position.y + movementWithDelta * PApplet.cos(direction);
+		float aimX = position.x + movementWithDelta * PApplet.cos(PApplet.radians(direction));
+		float aimY = position.y + movementWithDelta * PApplet.sin(PApplet.radians(direction));
 		
 		return new PVector(aimX, aimY);
 	}
@@ -175,15 +181,187 @@ public class Animal extends EnvironmentObject {
 		setHashPos();
 	}
 	
-	public void adjustAngle() {
-		if(!keepTurning)
-			coinToss = pro.random(0, 1);
-		if(coinToss > 0.5)
-			direction += 65;
+	public boolean adjustAngle(float deltaTime) {
+		float nearestFood = getNearFoodAngle();
+		double arg1 = normaliseRadians(nearestFood);
+		
+		float nearestAnimal = getNearAnimalAngle();
+		double arg2 = normaliseRadians(nearestAnimal);
+		
+		double arg3 = this.direction / 360;
+		
+		double arg4 = getNearWallDistance();
+		
+		nArgs = new double[]{ arg1, arg2, arg3, arg4 };
+		weighOptions = gene.neuralNetwork.guess(nArgs);
+		int selection = getIndexOfMax(weighOptions);
+		
+		//System.out.println(nArgs[0]);
+		//System.out.println(nArgs[1]);
+		//System.out.println(nArgs[2]);
+		//System.out.println(nArgs[3]);
+		
+		// Find out which direction to move
+		if(selection == 0) {
+			direction = direction - 60 * deltaTime;
+			fixDirection();
+			//System.out.println("LEFT");
+			return false;
+		} else if(selection == 1) {
+			direction = direction + 60 * deltaTime;
+			//System.out.println("RIGHT");
+			fixDirection();
+			return false;
+		}
+		//System.out.println("FORWARD");
+		// else if(selection == 2) {
+			//Do Nothing
+		//}
+		return true;
+		
+		//direction = (int) (guess[0] * 360);
+		//System.out.println(direction);
+		//System.out.println("------------NEW----------");
+		//System.out.println(direction);
+//		if(!keepTurning)
+//			coinToss = pro.random(0, 1);
+//		if(coinToss > 0.5)
+//			direction += 65;
+//		else
+//			direction -= 65;
+//		keepTurning = true;
+		//fixDirection();
+	}
+	
+	private int getIndexOfMax(double [] arr) {
+		int largest = 0;
+		for (int i = 1; i < arr.length; i++) {
+			if(arr[i] > arr[largest])
+				largest = i;
+		}
+		return largest;
+	}
+	
+	private double getSmallestValueInArr(ArrayList<Double> arr) {
+		int smallest = 0;
+		for (int i = 1; i < arr.size(); i++) {
+			System.out.println(arr.get(i));
+			if(arr.get(i) < arr.get(smallest))
+				smallest = i;
+		}
+		return arr.get(smallest);
+	}
+	
+	private int getIndexOfMin(double [] arr) {
+		int smallest = 0;
+		for (int i = 1; i < arr.length; i++) {
+			if(arr[i] < arr[smallest])
+				smallest = i;
+		}
+		return smallest;
+	}
+	
+	private double normaliseX(float x) {
+		return (double) (x / env.env.width);
+	}
+	
+	private double normaliseY(float y) {
+		return (double) (y / env.env.height);
+	}
+	
+	private double normaliseRadians(float radians) {
+		return (double) radians / (2 * PConstants.PI);
+	}
+	
+	private double getNearWallDistance() {
+		//double[] arr = new double[]{(double) (normaliseX(this.position.x - env.x)),
+									//(double) (normaliseX(env.env.topX - this.position.x)),
+									//(double) (normaliseY(this.position.y - env.y)),
+									//(double) (normaliseY(env.env.topY - this.position.y))};
+		
+		ArrayList<Double> dists = new ArrayList<Double>();
+		for (Wall wall : env.walls) {
+			PVector intersect = doesRayIntersectWall(wall);
+			if(intersect != null) {
+				dists.add((double) intersect.dist(position));
+				//pro.line(position.x, position.y, intersect.x, intersect.y);
+			}
+		}
+		
+		if(dists.size() > 0)
+			return (double) (normaliseY((float) getSmallestValueInArr(dists)));
 		else
-			direction -= 65;
-		keepTurning = true;
-		fixDirection();
+			return 1;
+		//pro.text("" + direction, position.x, position.y);
+		
+		
+		//pro.text("" + arr[3], position.x, position.y);
+		//return arr[getIndexOfMin(arr)];
+		//return arr;
+	}
+	
+	private PVector doesRayIntersectWall(Wall wall) {
+		PVector dir = PVector.fromAngle(PApplet.radians(direction));
+		dir.normalize();
+		// Wall 1
+		float x1 = wall.start.x;
+		float y1 = wall.start.y;
+		float x2 = wall.end.x;
+		float y2 = wall.end.y;
+		
+		float x3 = position.x;
+		float y3 = position.y;
+		float x4 = position.x + dir.x;
+		float y4 = position.y + dir.y;
+		
+		float denominator = (x1 - x2) * (y3 -y4) - (y1 - y2) * (x3 - x4);
+		if (denominator == 0) {
+			return null;
+		}
+		
+		float t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator;
+		float u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denominator;
+		if(t > 0 && t < 1 && u > 0) {
+			float x = x1 + t * (x2 - x1);
+			float y = y1 + t * (y2 - y1);
+			return new PVector(x, y);
+		}
+		return null;
+	}
+	
+	private float getNearFoodAngle() {
+		if(hashGrid != null) {
+			Set<EnvironmentObject> objectsInRange = hashGrid.get(position);
+			for (EnvironmentObject obj : objectsInRange) {
+				if(obj instanceof Food) {
+					// Cast object to the food type, for type safety
+					Food food = (Food) obj;
+					//System.out.println(food.position.x);
+					float angle = getAngle(this.position, food.position);
+					//pro.line(this.position.x, this.position.y, food.position.x, food.position.y);
+					return angle;
+				}
+			}
+		}
+		return 0;
+	}
+	
+	private float getNearAnimalAngle() {
+		if(hashGrid != null) {
+			Set<EnvironmentObject> objectsInRange = hashGrid.get(position);
+			for (EnvironmentObject obj : objectsInRange) {
+				if(obj instanceof Animal) {
+					Animal an = (Animal) obj;
+					float angle = getAngle(this.position, an.position);
+					return angle;
+				}
+			}
+		}
+		return 0;
+	}
+	
+	float getAngle(PVector a, PVector b){
+		  return PApplet.atan2(b.y - a.y, b.x - a.x) + PApplet.PI;
 	}
 	
 	private void fixDirection() {
@@ -328,28 +506,28 @@ public class Animal extends EnvironmentObject {
 	private void isOutOfBounds() {
 		boolean hitSide = false;
 		
-		if(position.x + width > env.topX) {
-			position.x = env.topX - width;
+		if(position.x + width > env.env.topX) {
+			position.x = env.env.topX - width;
 			hitSide = true;
 		}
 			
-		if(position.x < env.x) {
-			position.x = env.x;
+		if(position.x < env.env.x) {
+			position.x = env.env.x;
 			hitSide = true;
 		}
 		
-		if(position.y + width > env.topY) {
-			position.y = env.topY - width;
+		if(position.y + width > env.env.topY) {
+			position.y = env.env.topY - width;
 			hitSide = true;
 		}
 		
-		if(position.y < env.y) {
-			position.y = env.y;
+		if(position.y < env.env.y) {
+			position.y = env.env.y;
 			hitSide = true;
 		}
 		
-		if(hitSide)
-			adjustAngle();
+		//if(hitSide)
+			//adjustAngle();
 		
 	}
 	

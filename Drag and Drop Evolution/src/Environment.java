@@ -10,17 +10,15 @@ import processing.core.PVector;
 public class Environment {
 	// Processing applet
 	PApplet pro;
-	
-	// Environment dimensions
-	int x, y, width, height;
 	// Starting population animal count
-	int numOfAnimals = 1;
+	int numOfAnimals = 35;
 	// Max size of animals
 	float maxObjectSize = 24f;
 	// Amount of food
 	int foodPerEvent = 10;
 	// Ms per food event
 	float msPerFoodEvent = 2000;
+	int initialFood = 250;
 	float originalFoodPerEvent = msPerFoodEvent;
 	// Counter to track time till next food spawn
 	int foodCounter = 2000;
@@ -34,10 +32,18 @@ public class Environment {
 	UI userInterface;
 	// UI setting
 	float speedMultiplier = 1;
+	// Generations
+	int generations = 1;
+	
+	// Walls
+	ArrayList<Wall> walls = new ArrayList<Wall>();
 	
 	ArrayList<Animal> animals = new ArrayList<Animal>();
 	ArrayList<Food> foodArray = new ArrayList<Food>();
 	ArrayList<Egg> eggArray = new ArrayList<Egg>();
+	
+	ArrayList<Animal> topTenAnimals = new ArrayList<Animal>();
+	//Animal bestAnimal = null;
 	
 	ImageManager imageManager;
 	
@@ -51,18 +57,35 @@ public class Environment {
 		
 		// Create a hash grid
 		if(useHashGrid) {
-			hashGrid = new HashGrid<EnvironmentObject>(env.topX, env.topY, maxObjectSize * 2 + 1);
+			hashGrid = new HashGrid<EnvironmentObject>(env.topX, env.topY, maxObjectSize * 3 + 1);
 		}
 		
+		setupWalls();
 		createAnimals();
-		
+		createInitialFood();
+	}
+	
+	private void setupWalls() {
+		//Top wall
+		walls.add(new Wall(env.x, env.y, env.topX, env.y));
+		// Right wall
+		walls.add(new Wall(env.topX, env.y, env.topX, env.topY));
+		//Bottom wall
+		walls.add(new Wall(env.x, env.topY, env.topX, env.topY));
+		// Left wall
+		walls.add(new Wall(env.x, env.y, env.x, env.topY));
 	}
 	
 	private void createAnimals() {
 		// Create the animals
 		for(int i = 0; i < numOfAnimals; i++) {
-			addAnimal(new Gene(null), null);
+			if(!topTenAnimals.isEmpty()) {
+				addAnimal(new Gene(topTenAnimals.get((int) (pro.random(topTenAnimals.size()) ) ).gene) , null);
+			} else {
+				addAnimal(new Gene(null), null);
+			}
 		}
+		topTenAnimals.clear();
 	}
 	
 	public void reset() {
@@ -75,8 +98,16 @@ public class Environment {
 		eggArray.clear();
 		foodCounter = 2000;
 		
+		generations++;
 		userInterface.clearCharts();
 		createAnimals();
+		createInitialFood();
+	}
+	
+	void createInitialFood() {
+		for (int i = 0; i < initialFood; i++) {
+			addFood();
+		}
 	}
 	
 	void draw(float deltaTime, int lastLoopTime) {
@@ -86,6 +117,15 @@ public class Environment {
 		pro.fill(153, 255, 51, 190);
 		pro.noStroke();
 		pro.rect(env.x, env.y, env.width, env.height);
+		
+		//Save the best animal for next generation
+		if (animals.size() < 5 && this.topTenAnimals.isEmpty()) {
+			topTenAnimals.addAll(animals);
+		} else if (animals.size() == 0) {
+			reset();
+		} else if(animals.size() > 6 && !topTenAnimals.isEmpty()) {
+			topTenAnimals.clear();
+		}
 		
 		// Draw the food onto the environment
 		showFood();
@@ -143,10 +183,7 @@ public class Environment {
 			// Produce food
 			foodCounter = 0;
 			for (int i = 0; i < foodPerEvent; i++) {
-				foodArray.add(new Food(pro, animals, foodArray, env, hashGrid, null));
-				if(useHashGrid) {
-					hashGrid.add(foodArray.get(foodArray.size() - 1));
-				}
+				addFood();
 			}
 		}
 		
@@ -156,8 +193,15 @@ public class Environment {
 		}
 	}
 	
+	void addFood() {
+		foodArray.add(new Food(pro, animals, foodArray, this, hashGrid, null));
+		if(useHashGrid) {
+			hashGrid.add(foodArray.get(foodArray.size() - 1));
+		}
+	}
+	
 	void addAnimal(Gene gene, PVector eggPos) {
-		animals.add(new Animal(pro, animals, foodArray, env, hashGrid, imageManager, gene, eggPos));
+		animals.add(new Animal(pro, animals, foodArray, this, hashGrid, imageManager, gene, eggPos));
 		if(useHashGrid) {
 			hashGrid.add(animals.get(animals.size() -1));
 		}

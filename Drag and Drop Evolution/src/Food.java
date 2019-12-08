@@ -7,7 +7,7 @@ import processing.core.PVector;
 
 public class Food extends EnvironmentObject {
 	// Constructor
-	Food(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, RectObj env, HashGrid<EnvironmentObject> hashGrid, PVector startingLoc){
+	Food(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, Environment env, HashGrid<EnvironmentObject> hashGrid, PVector startingLoc){
 		// Call the parent constructor
 		super(parent, env, animals, foodArray, hashGrid, null);
 		width = pro.width * 0.005f;
@@ -32,8 +32,8 @@ public class Food extends EnvironmentObject {
 		boolean notFound = true;
 		PVector aimPos = new PVector();
 		do {
-			aimPos.x = (int) pro.random(env.x, env.topX - width);
-			aimPos.y = (int) pro.random(env.y, env.topY - width);
+			aimPos.x = (int) pro.random(env.env.x, env.env.topX - width);
+			aimPos.y = (int) pro.random(env.env.y, env.env.topY - width);
 			if(animals.size() < 0 || !(collideWithAnimal(aimPos))) {
 				notFound = false;
 			}

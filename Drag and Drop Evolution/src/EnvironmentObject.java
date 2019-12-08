@@ -12,14 +12,14 @@ public abstract class EnvironmentObject implements Locatable {
 	protected Color colour = new Color();
 	protected PApplet pro;
 	protected float width;
-	protected RectObj env;
+	protected Environment env;
 	protected ArrayList <Animal> animals;
 	protected ArrayList <Food> foodArray;
 	protected HashGrid<EnvironmentObject> hashGrid = null;
 	public boolean isSelected = false;
 	ImageManager imageManager = null;
 	
-	EnvironmentObject(PApplet pro, RectObj env, ArrayList<Animal> animals, ArrayList <Food> foodArray, HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager){
+	EnvironmentObject(PApplet pro, Environment env, ArrayList<Animal> animals, ArrayList <Food> foodArray, HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager){
 		this.pro = pro;
 		this.env = env;
 		this.animals = animals;

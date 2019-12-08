@@ -1,8 +1,7 @@
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.EventListenerProxy;
 
 import org.gicentre.utils.stat.XYChart;
 
@@ -74,7 +73,7 @@ public class UI {
 		
 		// Speed Up Button
 		RectObj speedUpPos = new RectObj(pro.width * 0.4f, pro.height * 0.1f, pro.width * 0.05f, pro.height * 0.05f);
-		UiElement speedUpUi = new UiSpeedUpButton(speedUpPos, true, uiElements, env, 3);
+		UiElement speedUpUi = new UiSpeedUpButton(speedUpPos, true, uiElements, env, 4);
 		PImage load1 = pro.loadImage("Speed_Up_1.png");
 		PImage load2 = pro.loadImage("Speed_Up_2.png");
 		speedUpUi.spriteArray.add(load1);
@@ -163,8 +162,8 @@ public class UI {
 	}
 	
 	public void saveTableThread() {
-		ArrayList<UiLineChart> uiLineChartsSave = new ArrayList<UiLineChart>(uiLineCharts);
 		String filePath = G4P.selectFolder("Select where to save CSV file");
+		ArrayList<UiLineChart> uiLineChartsSave = new ArrayList<UiLineChart>(uiLineCharts);
 		Table table = new Table();
 		  // Add columns
 		  table.addColumn("Seconds");
@@ -204,9 +203,36 @@ public class UI {
 				pro.image(ui.spriteArray.get(ui.spriteNum), ui.position.x, ui.position.y, ui.position.width, ui.position.height);
 		}
 		showAnimalViewPort();
+		showAnimalNetwork();
 		
 		// Show charts
 		showCharts();
+		
+		// Show generations
+		pro.fill(0,0,0);
+		pro.text("Generations " + env.generations, pro.width * 0.85f, pro.height * 0.15f);
+	}
+	
+	private void showAnimalNetwork() {
+		if(barCharts.size() > 0) {
+			float x = pro.width * 0.5f;
+			float y = pro.height * 0.02f;
+			float radius = pro.width * 0.01f;
+			double[] args = barCharts.get(0).an.nArgs;
+			for (int i = 0; i < args.length; i++) {
+				pro.fill((int) (args[i] * 255));
+				pro.circle(x, y, radius);
+				y = y + radius * 1.5f;
+			}
+			args = barCharts.get(0).an.weighOptions;
+			x = pro.width * 0.52f;
+			y = pro.height * 0.02f;
+			for (int i = 0; i < args.length; i++) {
+				pro.fill((int) (args[i] * 255));
+				pro.circle(x, y, radius);
+				y = y + radius * 1.5f;
+			}
+		}
 	}
 	
 	private void hideAllGraphs() {

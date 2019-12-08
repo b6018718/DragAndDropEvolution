@@ -10,7 +10,7 @@ public class Egg extends EnvironmentObject {
 	int timeTillHatch = 5000;
 	
 	
-	Egg(PApplet pro, RectObj env, ArrayList<Animal> animals, ArrayList<Food> foodArray,
+	Egg(PApplet pro, Environment env, ArrayList<Animal> animals, ArrayList<Food> foodArray,
 			HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager, Gene parentGene, PVector pos) {
 		super(pro, env, animals, foodArray, hashGrid, imageManager);
 		position.x = pos.x;

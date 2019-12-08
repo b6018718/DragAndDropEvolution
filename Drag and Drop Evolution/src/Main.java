@@ -9,7 +9,7 @@ import g4p_controls.GDropList;
 import g4p_controls.GEvent;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 1.4";
+	String versionNumber = "Alpha 1.6";
 	
 	// Screen dimensions
 	int scWidth;
@@ -101,7 +101,7 @@ public class Main extends PApplet {
 		timer.update();
 		int lastLoopTime = currentMillis - lastMillis;
 		float deltaTime = getDeltaTime(lastLoopTime);
-		millisCount += lastLoopTime * env.speedMultiplier;
+		millisCount += lastLoopTime;
 		if(millisCount > saveDataPerMs) {
 			secondPassedFrame = true;
 			millisCount = 0;
@@ -127,8 +127,8 @@ public class Main extends PApplet {
 		text(numOfAnimalsString, (float) (scWidth * 0.05), (float) (scHeight * 0.08));
 		
 		// Draw framerate
-		showFPS();
-		
+		//showFPS();
+		saveFrame("C:\\Users\\antho\\Desktop\\Evolution_Video\\img####.tif");
 		lastMillis = currentMillis;
 		secondPassedFrame = false;
 	}
@@ -136,9 +136,10 @@ public class Main extends PApplet {
 	public void keyPressed() {
 		if (key == 'f' || key == 'F')
 			userInterface.fpsLineChart.display = !userInterface.fpsLineChart.display;
-		else if (key == 'c' || key == 'C')
+		else if (key == 'c' || key == 'C') {
 			env.reset();
-		else if(key == 'b' || key == 'B') {
+			secondCount = 0;
+		} else if(key == 'b' || key == 'B') {
 			userInterface.animalPopulation.display = !userInterface.animalPopulation.display;
 			userInterface.birthRate.display = !userInterface.birthRate.display;
 		}	
