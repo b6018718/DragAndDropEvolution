@@ -29,9 +29,16 @@ public class UI {
 	UiLineChart sizeChart;
 	UiLineChart speedChart;
 	UiLineChart foodChart;
+	UiLineChart hungerChart;
+	
+	// Check boxes
+	GCheckbox learnCheckBox;
 	
 	// Buttons
 	GButton saveAsCsvBtn;
+	
+	// Neural network
+	UiNeuralNetwork uiNeuralNetwork;
 	
 	// Drop downs
 	GDropList graphSelect;
@@ -41,15 +48,28 @@ public class UI {
 	final String SPEED = "Speed";
 	final String FRAMERATE = "Framerate";
 	final String FOOD = "Food";
+	final String HUNGER = "Hunger";
 	
 	Environment env;
 	PImage viewPort;
 	PGraphics mask;
 	double uiOffset;
+	
 	// Zoom elements
 	ZoomPan zoomer;
 	boolean zoomedIn = false;
 	float speedMultiplier = 1;
+	boolean drawWalls = false;
+	double maxZoom = 2.2;
+	
+	// Draw Walls
+	boolean wallsButtonPressed = false;
+	PVector startingWall = new PVector();
+	
+	// Draw Sea
+	boolean drawingSea = false;
+	boolean seaStarted = false;
+	PVector seaStart = new PVector();
 	
 	XYChart chart;
 	
@@ -61,14 +81,14 @@ public class UI {
 		String [] items;
 		
 		graphSelect = new GDropList(pro, pro.width * 0.85f, pro.height * 0.6f, pro.width * 0.1f, pro.height * 0.25f, 4);
-		items = new String [] {POPULATION, LIFESPAN, SIZE, SPEED, FRAMERATE, FOOD};
+		items = new String [] {POPULATION, LIFESPAN, SIZE, SPEED, FRAMERATE, FOOD, HUNGER};
 		graphSelect.setItems(items, 0);
 		graphSelect.tag = "graphSelect";
 		
 		//Set up zoomer 
 		zoomer = new ZoomPan(pro);  // Initialise the zoomer
 		zoomer.setMinZoomScale(1);
-		zoomer.setMaxZoomScale(2.2);
+		zoomer.setMaxZoomScale(maxZoom);
 		//zoomer.setMouseMask(PConstants.SHIFT);
 		
 		// Speed Up Button
@@ -115,16 +135,26 @@ public class UI {
 		foodChart = new UiLineChart(pro, env, anRect, 1, true, FOOD);
 		foodChart.display = false;
 		
+		hungerChart = new UiLineChart(pro, env, anRect, 1, true, HUNGER);
+		hungerChart.display = false;
+		
 		uiLineCharts.add(animalPopulation);
 		uiLineCharts.add(birthRate);
 		uiLineCharts.add(sizeChart);
 		uiLineCharts.add(speedChart);
 		uiLineCharts.add(foodChart);
 		uiLineCharts.add(fpsLineChart);
+		uiLineCharts.add(hungerChart);
 		
 		// Create buttons
 		saveAsCsvBtn = new GButton(pro, pro.width * 0.85f, pro.height * 0.925f, pro.width * 0.08f, pro.height * 0.05f, "Save As CSV");
 		saveAsCsvBtn.setLocalColorScheme(GCScheme.ORANGE_SCHEME);
+		
+		// Check boxes
+		learnCheckBox = new GCheckbox(pro, pro.width * 0.7f, pro.height * 0.12f, pro.width * 0.1f, pro.height * 0.1f, "Machine Learning");
+		
+		// Neural network
+		uiNeuralNetwork = new UiNeuralNetwork(pro, pro.width * 0.5f, pro.height * 0.02f, pro.width * 0.2f, pro.height * 0.15f);
 	}
 	
 	public void handleDropListEvents(GDropList list, GEvent event) {
@@ -150,6 +180,9 @@ public class UI {
 			case FOOD:
 				foodChart.display = true;
 				break;
+			case HUNGER:
+				hungerChart.display = true;
+				break;
 			}
 		}
 	}
@@ -161,10 +194,20 @@ public class UI {
 		  }  
 	}
 	
+	public void handleToggleControlEvents(GToggleControl checkBox, GEvent event) {
+		if(checkBox == learnCheckBox) {
+			learnEvent(checkBox);
+		}
+	}
+	
+	private void learnEvent(GToggleControl checkBox) {
+		env.setMachineLearning(checkBox.isSelected());
+	}
+	
 	public void saveTableThread() {
-		String filePath = G4P.selectFolder("Select where to save CSV file");
-		ArrayList<UiLineChart> uiLineChartsSave = new ArrayList<UiLineChart>(uiLineCharts);
-		Table table = new Table();
+		  String filePath = G4P.selectFolder("Select where to save CSV file");
+		  ArrayList<UiLineChart> uiLineChartsSave = new ArrayList<UiLineChart>(uiLineCharts);
+		  Table table = new Table();
 		  // Add columns
 		  table.addColumn("Seconds");
 		  for (UiLineChart chart : uiLineChartsSave) {
@@ -172,16 +215,16 @@ public class UI {
 		  }
 		  // Add Rows
 		  for (int i = 0; i < uiLineChartsSave.get(0).dataPoints.size(); i++) {
-			// Create row
-			TableRow newRow = table.addRow();
-			// Add seconds
-			newRow.setFloat("Seconds", uiLineChartsSave.get(0).dataPoints.get(i).x);
-			// Add additional columns
-			for (UiLineChart chart : uiLineChartsSave) {
+			  // Create row
+		  TableRow newRow = table.addRow();
+		  // Add seconds
+		  newRow.setFloat("Seconds", uiLineChartsSave.get(0).dataPoints.get(i).x);
+		  // Add additional columns
+			  for (UiLineChart chart : uiLineChartsSave) {
 				newRow.setFloat(chart.graphName, chart.dataPoints.get(i).y);
-			}
+			  }
 		  }
-		pro.saveTable(table, filePath + "/evolution_data_" + new SimpleDateFormat("yyyyMMddHHmm").format(new Date()) + ".csv");
+		  pro.saveTable(table, filePath + "/evolution_data_" + new SimpleDateFormat("yyyyMMddHHmm").format(new Date()) + ".csv");
 	}
 	
 	
@@ -208,6 +251,11 @@ public class UI {
 		// Show charts
 		showCharts();
 		
+		// Show wall drawing operations
+		showWallInProgress();
+		
+		showSeaInProgress();
+		
 		// Show generations
 		pro.fill(0,0,0);
 		pro.text("Generations " + env.generations, pro.width * 0.85f, pro.height * 0.15f);
@@ -215,23 +263,7 @@ public class UI {
 	
 	private void showAnimalNetwork() {
 		if(barCharts.size() > 0) {
-			float x = pro.width * 0.5f;
-			float y = pro.height * 0.02f;
-			float radius = pro.width * 0.01f;
-			double[] args = barCharts.get(0).an.nArgs;
-			for (int i = 0; i < args.length; i++) {
-				pro.fill((int) (args[i] * 255));
-				pro.circle(x, y, radius);
-				y = y + radius * 1.5f;
-			}
-			args = barCharts.get(0).an.weighOptions;
-			x = pro.width * 0.52f;
-			y = pro.height * 0.02f;
-			for (int i = 0; i < args.length; i++) {
-				pro.fill((int) (args[i] * 255));
-				pro.circle(x, y, radius);
-				y = y + radius * 1.5f;
-			}
+			uiNeuralNetwork.draw();
 		}
 	}
 	
@@ -290,6 +322,8 @@ public class UI {
 		RectObj position = new RectObj(pro.width * 0.8f, pro.height * 0.4f, pro.width * 0.2f, pro.height * 0.2f);
 		UiBarChart barChart = new UiBarChart(position, an, pro);
 		barCharts.add(barChart);
+		// Set the neural network
+		uiNeuralNetwork.setAnimal(an);
 	}
 	
 	public void showAnimalViewPort() {
@@ -320,12 +354,14 @@ public class UI {
 			pro.image(viewPort, (int) (pro.width * 0.85), (int) (pro.height * 0.2), (int) (pro.width * 0.12), (int) (pro.width * 0.12));
 			
 			// Camera follow animal
-			float zoomScale = (float) zoomer.getZoomScale();
-			float widthCalc = an.width / 2 * zoomScale;
-			PVector zoomPos = new PVector(- ((an.position.x - widthCalc - pro.width / 2) * zoomScale), -((an.position.y - widthCalc - pro.height / 2) * zoomScale)); //zoomer.getCoordToDisp(an.position);
-			
-			zoomer.setPanOffset(zoomPos.x, zoomPos.y);
-			correctPanOffset();
+			if(!drawWalls) {
+				float zoomScale = (float) zoomer.getZoomScale();
+				float widthCalc = an.width / 2 * zoomScale;
+				PVector zoomPos = new PVector(- ((an.position.x - widthCalc - pro.width / 2) * zoomScale), -((an.position.y - widthCalc - pro.height / 2) * zoomScale)); //zoomer.getCoordToDisp(an.position);
+				
+				zoomer.setPanOffset(zoomPos.x, zoomPos.y);
+				correctPanOffset();
+			}
 		}
 	}
 	
@@ -356,4 +392,124 @@ public class UI {
 
 		zoomer.setPanOffset(panOffset.x, panOffset.y);
 	}
+	
+	public void beginDrawingWalls() {
+		this.drawWalls = !this.drawWalls;
+		if(drawWalls) {
+			zoomOut();
+		} else {
+			zoomIn();
+			resetWalls();
+		}
+	}
+	
+	private void zoomOut() {
+		zoomer.reset();
+		zoomer.allowPanButton(false);
+		zoomer.allowZoomButton(false);
+		zoomer.setMaxZoomScale(1);
+	}
+	
+	private void zoomIn() {
+		zoomer.reset();
+		zoomer.allowPanButton(true);
+		zoomer.allowZoomButton(true);
+		zoomer.setMaxZoomScale(maxZoom);
+	}
+	
+	public void drawWallsPressed() {
+		if(this.drawWalls) {
+			this.wallsButtonPressed = !this.wallsButtonPressed;
+			
+			// Create the walls
+			if(!this.wallsButtonPressed) {
+				// End drawing
+				env.walls.add(new Wall(this.startingWall.x, this.startingWall.y, pro.mouseX, pro.mouseY));
+				this.startingWall.x = pro.mouseX;
+				this.startingWall.y = pro.mouseY;
+				this.wallsButtonPressed = true;
+			} else {
+				// Start drawing
+				this.startingWall.x = pro.mouseX;
+				this.startingWall.y = pro.mouseY;
+			}
+		}
+	}
+	
+	public void showWallInProgress() {
+		if(this.drawWalls && startingWall.y != 0) {
+			pro.stroke(0);
+			pro.line(startingWall.x, startingWall.y, pro.mouseX, pro.mouseY);
+		}
+	}
+	
+	public void showSeaInProgress() {
+		if(drawingSea && seaStarted) {
+			float width = getSeaDistance(seaStart.x, pro.mouseX);
+			float height = getSeaDistance(seaStart.y, pro.mouseY);
+			
+			float x = seaStart.x;
+			float y = seaStart.y;
+			if(seaStart.x > pro.mouseX)
+				x = pro.mouseX;
+			
+			if(seaStart.y > pro.mouseY)
+				y = pro.mouseY;
+			
+			pro.fill(10, 0, 175);
+			pro.rect(x, y, width, height);
+		}
+	}
+	
+	public void resetWalls() {
+		startingWall.y = 0;
+		wallsButtonPressed = false;
+	}
+	
+	public void beginDrawingSea() {
+		//drawingSea = true;
+		if(!drawingSea) {
+			// Start drawing
+			drawingSea = true;
+			zoomOut();
+		} else {
+			// End drawing
+			drawingSea = false;
+			zoomIn();
+		}
+	}
+	
+	public void drawSeaPressed() {
+		if(seaStarted) {
+			float width = getSeaDistance(seaStart.x, pro.mouseX);
+			float height = getSeaDistance(seaStart.y, pro.mouseY);
+			float x = seaStart.x;
+			float y = seaStart.y;
+			if(seaStart.x > pro.mouseX)
+				x = pro.mouseX;
+			
+			if(seaStart.y > pro.mouseY)
+				y = pro.mouseY;
+			
+			env.sea.add(new RectObj(x, y, width, height));
+			seaStarted = false;
+		} else if(drawingSea) {
+			seaStart.x = pro.mouseX;
+			seaStart.y = pro.mouseY;
+			seaStarted = true;
+		}
+	}
+	
+	private float getSeaDistance(float point1, float point2) {
+		float dist = point1 - point2;
+		if(dist < 0)
+			dist = dist * -1;
+		return dist;
+	}
+	
+	public void resetSeaDrawing() {
+		seaStart.y = 0;
+		seaStarted = false;
+	}
+	
 }

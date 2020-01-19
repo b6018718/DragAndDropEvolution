@@ -13,10 +13,12 @@ public class Animal extends EnvironmentObject {
 	float standardSize;
 	float direction;
 	float movementSpeed;
+	float topWaterSpeed = 50;
 	int id;
 	boolean keepTurning = false;
 	boolean isDead = false;
 	float coinToss;
+	double distanceToWall;
 	
 	// Life span
 	float startingLifeSpan;
@@ -29,11 +31,16 @@ public class Animal extends EnvironmentObject {
 	float whenGetHungryMs = 1000;
 	boolean didStarve = false;
 	boolean eatenOnce = false;
+	boolean turning = false;
+	boolean restMode = false;
 	
 	// Reproduction
 	float startingTimeTillLayEgg;
 	float timeTillLayEgg;
 	int numberOfChildren = 0;
+	
+	// Water
+	boolean insideWater = false;
 	
 	// Machine learning
 	Gene gene;
@@ -50,6 +57,7 @@ public class Animal extends EnvironmentObject {
 		this.width = (float) gene.size;
 		this.startingLifeSpan = (float) gene.lifeSpan;
 		this.lifeSpanInMs = startingLifeSpan;
+		this.distanceToWall = this.width;
 		
 		
 		// Set the attributes
@@ -68,7 +76,7 @@ public class Animal extends EnvironmentObject {
 					placeAttempts = 20;
 					width--;
 				}
-			} while (collide(position) && width > 0);
+			} while (collide(position, 0) && width > 0);
 		} else {
 			position.x = eggPos.x;
 			position.y = eggPos.y;
@@ -116,11 +124,19 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	void move(float deltaTime) {
+		setWallDistance();
 		boolean moveForward = adjustAngle(deltaTime);
-		if(!moveForward)
-			deltaTime = deltaTime * 0.7f;
+		if(!moveForward) {
+			if(restMode)
+				// Resting
+				deltaTime = deltaTime * 0.2f;
+			else
+				// Turning
+				deltaTime = deltaTime * 0.7f;
+		}
+			
 		PVector aimVector = getAimVector(deltaTime);
-		if(collide(aimVector)) {
+		if(collide(aimVector, deltaTime)) {
 			notEnoughSpace(deltaTime);
 			//adjustAngle();
 		} else {
@@ -165,7 +181,15 @@ public class Animal extends EnvironmentObject {
 	
 	private PVector getAimVector(float deltaTime) {		
 		//Time based animation
-		float movementWithDelta = movementSpeed * deltaTime;
+		float movementWithDelta;
+		if(!inWater()) {
+			movementWithDelta = movementSpeed * deltaTime;
+		}else {
+			float waterSpeed = (float) (topWaterSpeed - gene.speed);
+			if(waterSpeed < 1)
+				waterSpeed = 1;
+			movementWithDelta = waterSpeed * deltaTime;
+		}
 		
 		// Frame based animation
 		float aimX = position.x + movementWithDelta * PApplet.cos(PApplet.radians(direction));
@@ -182,17 +206,30 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	public boolean adjustAngle(float deltaTime) {
-		float nearestFood = getNearFoodAngle();
-		double arg1 = normaliseRadians(nearestFood);
+		float[] nearestFood = getNearFoodAngle();
+		// Food angle
+		double arg1 = normaliseRadians(nearestFood[0]);
+		// Food distance
+		double arg2 = normaliseSight(nearestFood[1]);
 		
 		float nearestAnimal = getNearAnimalAngle();
-		double arg2 = normaliseRadians(nearestAnimal);
+		// Animal angle
+		double arg3 = normaliseRadians(nearestAnimal);
+		// Current angle
+		double arg4 = this.direction / 360;
+		// Distance to closest wall
+		double arg5 = (double) (normaliseY((float) this.distanceToWall));
 		
-		double arg3 = this.direction / 360;
+		double arg6 = normaliseHunger();
 		
-		double arg4 = getNearWallDistance();
+		double arg7 = normaliseEggTime();
 		
-		nArgs = new double[]{ arg1, arg2, arg3, arg4 };
+		double arg8 = 0;
+		if(insideWater) {
+			arg8 = 1;
+		}
+		
+		nArgs = new double[]{ arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 };
 		weighOptions = gene.neuralNetwork.guess(nArgs);
 		int selection = getIndexOfMax(weighOptions);
 		
@@ -201,22 +238,31 @@ public class Animal extends EnvironmentObject {
 		//System.out.println(nArgs[2]);
 		//System.out.println(nArgs[3]);
 		
+		restMode = false;
+		if(weighOptions[3] > 0.7) {
+			// Enter rest mode
+			restMode = true;
+		}
+		//System.out.println(weighOptions[3]);
 		// Find out which direction to move
 		if(selection == 0) {
 			direction = direction - 60 * deltaTime;
 			fixDirection();
+			turning = true;
 			//System.out.println("LEFT");
 			return false;
 		} else if(selection == 1) {
 			direction = direction + 60 * deltaTime;
 			//System.out.println("RIGHT");
 			fixDirection();
+			turning = true;
 			return false;
 		}
 		//System.out.println("FORWARD");
 		// else if(selection == 2) {
 			//Do Nothing
 		//}
+		turning = false;
 		return true;
 		
 		//direction = (int) (guess[0] * 360);
@@ -245,7 +291,6 @@ public class Animal extends EnvironmentObject {
 	private double getSmallestValueInArr(ArrayList<Double> arr) {
 		int smallest = 0;
 		for (int i = 1; i < arr.size(); i++) {
-			System.out.println(arr.get(i));
 			if(arr.get(i) < arr.get(smallest))
 				smallest = i;
 		}
@@ -265,6 +310,10 @@ public class Animal extends EnvironmentObject {
 		return (double) (x / env.env.width);
 	}
 	
+	private double normaliseSight(float x) {
+		return (double) (x / (env.maxObjectSize * 3 + 1));
+	}
+	
 	private double normaliseY(float y) {
 		return (double) (y / env.env.height);
 	}
@@ -273,32 +322,24 @@ public class Animal extends EnvironmentObject {
 		return (double) radians / (2 * PConstants.PI);
 	}
 	
-	private double getNearWallDistance() {
-		//double[] arr = new double[]{(double) (normaliseX(this.position.x - env.x)),
-									//(double) (normaliseX(env.env.topX - this.position.x)),
-									//(double) (normaliseY(this.position.y - env.y)),
-									//(double) (normaliseY(env.env.topY - this.position.y))};
-		
+	private void setWallDistance() {
+		PVector middlePosition = new PVector(position.x + this.width / 2, position.y + this.width / 2);
 		ArrayList<Double> dists = new ArrayList<Double>();
 		for (Wall wall : env.walls) {
 			PVector intersect = doesRayIntersectWall(wall);
 			if(intersect != null) {
-				dists.add((double) intersect.dist(position));
-				//pro.line(position.x, position.y, intersect.x, intersect.y);
+				dists.add((double) intersect.dist(middlePosition));
+				if(env.showLines)
+					pro.line(middlePosition.x, middlePosition.y, intersect.x, intersect.y);
 			}
 		}
 		
 		if(dists.size() > 0)
-			return (double) (normaliseY((float) getSmallestValueInArr(dists)));
+			this.distanceToWall = (double) getSmallestValueInArr(dists);
 		else
-			return 1;
-		//pro.text("" + direction, position.x, position.y);
-		
-		
-		//pro.text("" + arr[3], position.x, position.y);
-		//return arr[getIndexOfMin(arr)];
-		//return arr;
+			this.distanceToWall = -1;
 	}
+	
 	
 	private PVector doesRayIntersectWall(Wall wall) {
 		PVector dir = PVector.fromAngle(PApplet.radians(direction));
@@ -329,21 +370,33 @@ public class Animal extends EnvironmentObject {
 		return null;
 	}
 	
-	private float getNearFoodAngle() {
+	private float[] getNearFoodAngle() {
 		if(hashGrid != null) {
 			Set<EnvironmentObject> objectsInRange = hashGrid.get(position);
+			Food closestFood = null;
+			double closestDistance = 100.0;
+			float sightX = position.x + this.width * 2 * PApplet.cos(PApplet.radians(direction));
+			float sightY = position.y + this.width * 2 * PApplet.sin(PApplet.radians(direction));
 			for (EnvironmentObject obj : objectsInRange) {
 				if(obj instanceof Food) {
 					// Cast object to the food type, for type safety
 					Food food = (Food) obj;
-					//System.out.println(food.position.x);
-					float angle = getAngle(this.position, food.position);
-					//pro.line(this.position.x, this.position.y, food.position.x, food.position.y);
-					return angle;
+					double dist = PApplet.dist(sightX, sightY, food.position.x, food.position.y);
+					if(dist < closestDistance) {
+						closestFood = food;
+						closestDistance = dist;
+					}
 				}
 			}
+			// Send angle
+			if(closestFood != null) {	
+				float angle = getAngle(this.position, closestFood.position);
+				if(env.showLines)
+					pro.line(this.position.x, this.position.y, closestFood.position.x, closestFood.position.y);
+				return new float[] {angle, (float) closestDistance};
+			}
 		}
-		return 0;
+		return new float[] {0, this.env.maxObjectSize * 3 + 1};
 	}
 	
 	private float getNearAnimalAngle() {
@@ -353,6 +406,8 @@ public class Animal extends EnvironmentObject {
 				if(obj instanceof Animal) {
 					Animal an = (Animal) obj;
 					float angle = getAngle(this.position, an.position);
+					if(env.showLines)
+						pro.line(position.x, position.y, an.position.x, an.position.y);
 					return angle;
 				}
 			}
@@ -377,7 +432,15 @@ public class Animal extends EnvironmentObject {
 		float hungerSpeed = movementSpeed;
 		
 		lifeSpanInMs = lifeSpanInMs - lastLoopTime;
-		timeTillStarve = timeTillStarve - lastLoopTime;
+		
+		//if(turning)
+			//timeTillStarve = timeTillStarve - lastLoopTime;
+		//else
+		if(restMode) {
+			timeTillStarve = timeTillStarve - lastLoopTime * 0.5f;
+		} else {
+			timeTillStarve = timeTillStarve - lastLoopTime;
+		}
 		
 		float lifeRemaining = lifeSpanInMs / startingLifeSpan;
 		// Elderly check
@@ -435,8 +498,8 @@ public class Animal extends EnvironmentObject {
 	
 	public void removeFromEnvironment() {
 		removeAnimalFromArray();
-		if(!didStarve)
-			addFoodAtDeathLocation();
+		//if(!didStarve)
+			//addFoodAtDeathLocation();
 	}
 	
 	private void removeAnimalFromArray() {
@@ -445,25 +508,28 @@ public class Animal extends EnvironmentObject {
 		animals.remove(this);
 	}
 	
-	private void addFoodAtDeathLocation() {
-		foodArray.add(new Food(pro, animals, foodArray, env, hashGrid, position));
-		if(hashGrid != null) {
-			hashGrid.add(foodArray.get(foodArray.size() - 1));
-		}
-	}
+//	private void addFoodAtDeathLocation() {
+//		foodArray.add(new Food(pro, animals, foodArray, env, hashGrid, position));
+//		if(hashGrid != null) {
+//			hashGrid.add(foodArray.get(foodArray.size() - 1));
+//		}
+//	}
 	
-	private boolean collide(PVector collidePos) {
+	private boolean collide(PVector collidePos, float deltaTime) {
 		if(hashGrid != null) {
-			return checkForCollisions(collidePos, null);
+			return checkForCollisions(collidePos, null, deltaTime);
 		} else {
-			if(checkForCollisions(collidePos, animals))
+			if(checkForCollisions(collidePos, animals, deltaTime))
 				return true;
-			checkForCollisions(collidePos, foodArray);
+			checkForCollisions(collidePos, foodArray, deltaTime);
 		}
 		return false;
 	}
 
-	private boolean checkForCollisions(PVector collidePos, ArrayList<? extends EnvironmentObject> arrList) {
+	private boolean checkForCollisions(PVector collidePos, ArrayList<? extends EnvironmentObject> arrList, float deltaTime) {
+		if(this.distanceToWall <= this.width + this.movementSpeed * deltaTime * 2)
+			return true;
+		
 		Set<EnvironmentObject> objectsInRange;
 		if(hashGrid != null) {
 			objectsInRange = hashGrid.get(collidePos);
@@ -491,7 +557,7 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	public void eat(Food food, HashGrid<EnvironmentObject> hashGrid) {
-		timeTillStarve += food.width * 2000;
+		timeTillStarve += food.width * 4000;
 		eatenOnce = true;
 		if(timeTillStarve > startingTimeTillStarve) {
 			timeTillStarve = startingTimeTillStarve;
@@ -529,6 +595,17 @@ public class Animal extends EnvironmentObject {
 		//if(hitSide)
 			//adjustAngle();
 		
+	}
+	
+	public boolean inWater() {
+		for (int i = 0; i < env.sea.size(); i++) {
+			if(collisionAABB(env.sea.get(i), position)) {
+				insideWater = true;
+				return true;
+			}
+		}
+		insideWater = false;
+		return false;
 	}
 	
 	public int getRandomAngle() {

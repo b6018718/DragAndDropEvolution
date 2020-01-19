@@ -11,11 +11,11 @@ public class Environment {
 	// Processing applet
 	PApplet pro;
 	// Starting population animal count
-	int numOfAnimals = 35;
+	int numOfAnimals = 30;
 	// Max size of animals
 	float maxObjectSize = 24f;
 	// Amount of food
-	int foodPerEvent = 10;
+	int foodPerEvent = 5;
 	// Ms per food event
 	float msPerFoodEvent = 2000;
 	int initialFood = 250;
@@ -35,6 +35,9 @@ public class Environment {
 	// Generations
 	int generations = 1;
 	
+	// Line between animals
+	boolean showLines = false;
+	
 	// Walls
 	ArrayList<Wall> walls = new ArrayList<Wall>();
 	
@@ -43,7 +46,7 @@ public class Environment {
 	ArrayList<Egg> eggArray = new ArrayList<Egg>();
 	
 	ArrayList<Animal> topTenAnimals = new ArrayList<Animal>();
-	//Animal bestAnimal = null;
+	ArrayList<RectObj> sea = new ArrayList<RectObj>();
 	
 	ImageManager imageManager;
 	
@@ -102,6 +105,7 @@ public class Environment {
 		userInterface.clearCharts();
 		createAnimals();
 		createInitialFood();
+		setMachineLearning(userInterface.learnCheckBox.isSelected());
 	}
 	
 	void createInitialFood() {
@@ -127,6 +131,8 @@ public class Environment {
 			topTenAnimals.clear();
 		}
 		
+		showSea();
+		
 		// Draw the food onto the environment
 		showFood();
 		
@@ -141,6 +147,9 @@ public class Environment {
 			animalReproduce(an, lastLoopTime);
 			an.checkIfDead(lastLoopTime);
 		}
+		
+		// Draw walls
+		drawAllWalls();
 		
 		// Update counters
 		if(msPerFoodEvent != -1)
@@ -279,5 +288,35 @@ public class Environment {
 	
 	public boolean withinEnv(PVector mouse) {
 		return (mouse.x > env.x && mouse.x < env.topX && mouse.y > env.y & mouse.y < env.topY);
+	}
+	
+	public void showAnimalLines() {
+		this.showLines = !this.showLines;
+	}
+	
+	public void setMachineLearning(boolean learningBool) {
+		for (Animal animal : animals) {
+			animal.gene.mutate = learningBool;
+		}
+		
+		for(Egg egg: eggArray) {
+			egg.gene.generateRandomNetwork();
+		}
+	}
+	
+	private void drawAllWalls() {
+		for (int i = 0; i < walls.size(); i++) {
+			Wall wall = walls.get(i);
+			pro.stroke(0);
+			pro.line(wall.start.x, wall.start.y, wall.end.x, wall.end.y);
+		}
+	}
+	
+	public void showSea() {
+		for (int i = 0; i < sea.size(); i++) {
+			RectObj seaSquare = sea.get(i);
+			pro.fill(10, 0, 175);
+			pro.rect(seaSquare.x, seaSquare.y, seaSquare.width, seaSquare.height);
+		}
 	}
 }

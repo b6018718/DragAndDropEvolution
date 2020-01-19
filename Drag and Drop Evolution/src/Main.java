@@ -5,8 +5,10 @@ import org.gicentre.utils.FrameTimer;
 import org.gicentre.utils.stat.XYChart;
 
 import g4p_controls.GButton;
+import g4p_controls.GCheckbox;
 import g4p_controls.GDropList;
 import g4p_controls.GEvent;
+import g4p_controls.GToggleControl;
 
 public class Main extends PApplet {
 	String versionNumber = "Alpha 1.6";
@@ -127,22 +129,23 @@ public class Main extends PApplet {
 		text(numOfAnimalsString, (float) (scWidth * 0.05), (float) (scHeight * 0.08));
 		
 		// Draw framerate
-		//showFPS();
-		saveFrame("C:\\Users\\antho\\Desktop\\Evolution_Video\\img####.tif");
+		showFPS();
+		//saveFrame("C:\\Users\\antho\\Desktop\\Evolution_Video\\img####.tif");
 		lastMillis = currentMillis;
 		secondPassedFrame = false;
 	}
 	
 	public void keyPressed() {
-		if (key == 'f' || key == 'F')
-			userInterface.fpsLineChart.display = !userInterface.fpsLineChart.display;
-		else if (key == 'c' || key == 'C') {
+		if (key == 'c' || key == 'C') {
 			env.reset();
 			secondCount = 0;
-		} else if(key == 'b' || key == 'B') {
-			userInterface.animalPopulation.display = !userInterface.animalPopulation.display;
-			userInterface.birthRate.display = !userInterface.birthRate.display;
-		}	
+		} else if(key == 'l' || key == 'L') {
+			env.showAnimalLines();
+		} else if(key == 'w' || key == 'W') {
+			userInterface.beginDrawingWalls();
+		} else if(key == 's' || key == 'S') {
+			userInterface.beginDrawingSea();
+		}
 	}
 	
 	public void mousePressed() {
@@ -159,6 +162,14 @@ public class Main extends PApplet {
 			
 			env.clickOnEnv(mouseZoomed, mouseUi);
 			userInterface.checkCollisions(mouseUi);
+			
+			userInterface.drawWallsPressed();
+			userInterface.drawSeaPressed();
+		}
+		
+		if(mouseButton == RIGHT) {
+			userInterface.resetWalls();
+			userInterface.resetSeaDrawing();
 		}
 	}
 	
@@ -183,8 +194,11 @@ public class Main extends PApplet {
 			userInterface.sizeChart.addData(secondCount, calculateAverageSize());
 			userInterface.speedChart.addData(secondCount, calculateAverageSpeed());
 			userInterface.foodChart.addData(secondCount, env.foodArray.size());
+			userInterface.hungerChart.addData(secondCount, calculateAverageHunger());
 		}
 	}
+	
+	
 	
 	public float calculateAverageBirthRateInSeconds() {
 		if(env.animals.size() == 0) {
@@ -197,6 +211,20 @@ public class Main extends PApplet {
 		}
 		float returnVal = totalLifeSpan / (env.animals.size() * 1000);
 		return returnVal;
+	}
+	
+	public float calculateAverageHunger() {
+		if(env.animals.size() == 0) {
+			return 0;
+		}
+		
+		float totalHunger = 0;
+		for (Animal an : env.animals) {
+			totalHunger += an.normaliseHunger();
+		}
+		float returnVal = totalHunger / env.animals.size();
+		return 1 - returnVal;
+		
 	}
 	
 	public float calculateAverageSize() {
@@ -231,6 +259,10 @@ public class Main extends PApplet {
 	
 	public void handleButtonEvents(GButton button, GEvent event) {
 		userInterface.handleButtonEvents(button, event);
+	}
+	
+	public void handleToggleControlEvents(GToggleControl checkBox, GEvent event) {
+		userInterface.handleToggleControlEvents(checkBox, event);
 	}
 	
 	public void saveTableThread() {

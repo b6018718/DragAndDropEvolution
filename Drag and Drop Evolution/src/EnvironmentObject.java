@@ -6,7 +6,7 @@ import org.gicentre.utils.geom.Locatable;
 import processing.core.PApplet;
 import processing.core.PVector;
 
-public abstract class EnvironmentObject implements Locatable {
+public class EnvironmentObject implements Locatable {
 	protected PVector position = new PVector();
 	protected PVector hashPos = new PVector();
 	protected Color colour = new Color();
@@ -60,6 +60,15 @@ public abstract class EnvironmentObject implements Locatable {
 	protected boolean collisionAABB(EnvironmentObject obj, PVector aimPos) {
 		if(obj.position.x <= aimPos.x + width && obj.position.x + obj.width >= aimPos.x) { // X Collision
 			if(obj.position.y <= aimPos.y + width && obj.position.y + obj.width >= aimPos.y) { // Y Collision
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	protected boolean collisionAABB(RectObj obj, PVector aimPos) {
+		if(obj.x <= aimPos.x + width && obj.x + obj.width >= aimPos.x) { // X Collision
+			if(obj.y <= aimPos.y + width && obj.y + obj.height >= aimPos.y) { // Y Collision
 				return true;
 			}
 		}

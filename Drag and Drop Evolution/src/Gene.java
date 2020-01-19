@@ -11,9 +11,13 @@ public class Gene {
 	private double mutationChance = 0.5;
 	// 20% variation spread per mutation (-/+)
 	private double mutationRate = 0.1;
-	private double behaviourMutationRate = 0.1;
+	private double behaviourMutationRate = 0.05;
 	// If mutation is allowed
-	private boolean mutate = true;
+	public boolean mutate;
+	
+	public void generateRandomNetwork() {
+		neuralNetwork =  new NeuralNetwork(8, 7, 4);
+	}
 	
 	Gene(Gene parent){
 		if (parent == null) {
@@ -21,10 +25,17 @@ public class Gene {
 			speed = 50;
 			lifeSpan = 60000;
 			colour = null;
-			neuralNetwork = new NeuralNetwork(4, 4, 3);
+			generateRandomNetwork();
 			neuralNetwork.setActivationFunction(ActivationFunction.SIGMOID);
+			mutate = false;
 		} else {
-			neuralNetwork = parent.neuralNetwork.copy();
+			mutate = parent.mutate;
+			// If no mutation, generate a random new network
+			if(mutate)
+				neuralNetwork = parent.neuralNetwork.copy();
+			else 
+				generateRandomNetwork();
+			// Perform mutations
 			if(random(0,1) <= mutationChance && mutate) {
 				// Genes can mutate
 				size = applyMutation(parent.size);
