@@ -11,7 +11,7 @@ import g4p_controls.GEvent;
 import g4p_controls.GToggleControl;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 1.6";
+	String versionNumber = "Alpha 1.7";
 	
 	// Screen dimensions
 	int scWidth;

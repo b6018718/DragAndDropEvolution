@@ -27,21 +27,30 @@ public class UiNeuralNetwork {
 		
 		this.animal = animal;
 		int inputCount = animal.gene.neuralNetwork.getInputNodes();
-		diameter = location.height / (inputCount * 2f + 1) ;
-		
-		for (int i = 0; i < inputCount; i++) {
-			inputs.add(new PVector(location.x + location.height / 3, location.y + diameter * (i + 0.5f)  * 2));
-		}
-		
 		int hiddenLayerCount = animal.gene.neuralNetwork.getHiddenLayers();
 		int hiddenCount = animal.gene.neuralNetwork.getHiddenNodes();
+		int outCount = animal.gene.neuralNetwork.getOutputNodes();
+		
+		int layersTotalCount = 2 + hiddenLayerCount;
+		
+		diameter = location.height / (inputCount * 2f + 1) ;
+		
+		// Draw Circles
+		for (int i = 0; i < inputCount; i++) {
+			inputs.add(new PVector(location.x + (location.width / (layersTotalCount + 1)) * 1, location.y + (location.height / (inputCount + 1)) * (i + 1)  ));
+		}
+
 		
 		for(int i = 0; i < hiddenLayerCount; i++) {
 			ArrayList <PVector> arr = new ArrayList <PVector>();
 			for(int j = 0; j < hiddenCount; j++) {
-				
+				arr.add(new PVector(location.x + (location.width / (layersTotalCount + 1)) * (i + 2), location.y + (location.height / (hiddenCount + 1)) * (j + 1)  ));
 			}
 			hidden.add(arr);
+		}
+		
+		for (int i = 0; i < outCount; i++) {
+			outputs.add(new PVector(location.x + (location.width / (layersTotalCount + 1)) * (2 + hiddenLayerCount), location.y + (location.height / (outCount + 1)) * (i + 1)  ));
 		}
 		
 	}
@@ -57,12 +66,55 @@ public class UiNeuralNetwork {
 		pro.fill(160);
 		pro.rect(location.x, location.y, location.width, location.height);
 		
-		double[] inputColours = animal.nArgs;
+		
 		if(animal != null && show) {
+			// Draw lines
+			pro.stroke(0);
+			pro.strokeWeight(1);
+			for (int i = 0; i < inputs.size(); i++) {
+				for (int j = 0; j < hidden.get(0).size(); j++) {
+					pro.line(inputs.get(i).x, inputs.get(i).y, hidden.get(0).get(j).x, hidden.get(0).get(j).y);
+				}
+			}
+			
+			for (int i = 0; i < hidden.size() -1; i++) {
+				for (int j = 0; j < hidden.get(i).size(); j++) {
+					for (int k = 0; k < hidden.get(i + 1).size(); k++) {
+						pro.line(hidden.get(i).get(j).x, hidden.get(i).get(j).y, hidden.get(i + 1).get(k).x, hidden.get(i + 1).get(k).y);
+					}
+				}
+			}
+			
+			for (int i = 0; i < hidden.get(hidden.size() - 1).size() ; i++) {
+				for (int j = 0; j < outputs.size(); j++) {
+					pro.line( hidden.get(hidden.size() - 1).get(i).x , hidden.get(hidden.size() - 1).get(i).y, outputs.get(j).x, outputs.get(j).y);
+				}
+			}
+			
+			// Draw Circles
+			double[] inputColours = animal.nArgs;
+			double[] outputColours = animal.weighOptions;
+			
 			for (int i = 0; i < inputs.size(); i++) {
 				pro.fill((int) (inputColours[i] * 255));
 				pro.circle(inputs.get(i).x, inputs.get(i).y, diameter);
 			}
+			
+			for (int i = 0; i < hidden.size(); i++) {
+				for (int j = 0; j < hidden.get(i).size(); j++) {
+					//pro.fill((int) (inputColours[i] * 255));
+					pro.fill(255);
+					pro.circle(hidden.get(i).get(j).x, hidden.get(i).get(j).y, diameter);
+				}
+			}
+			
+			for (int i = 0; i < outputs.size(); i++) {
+				pro.fill((int) (outputColours[i] * 255));
+				pro.circle(outputs.get(i).x, outputs.get(i).y, diameter);
+			}
+			
+			
+
 		}
 	}
 	
