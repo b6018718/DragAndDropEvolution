@@ -15,8 +15,25 @@ public class Gene {
 	// If mutation is allowed
 	public boolean mutate;
 	
+	// Behaviour
+	
+	// Speed
+	//public BehaviourSpeed behaveSpeed = new slow();
+	public BehaviourSpeed behaveSpeed = new dynamicSpeed();
+	//public BehaviourSpeed behaveSpeed = new fast();
+	
+	// Size
+	//public BehaviourSize behaveSize = new big();
+	public BehaviourSize behaveSize = new dynamicSize();
+	//public BehaviourSize behaveSize = new small();
+	
+	// Lifespan
+	//public BehaviourLifespan behaveLifespan = new shortLife();
+	//public BehaviourLifespan behaveLifespan = new dynamicLifespan();
+	public BehaviourLifespan behaveLifespan = new longLife();
+	
 	public void generateRandomNetwork() {
-		neuralNetwork =  new NeuralNetwork(8, 7, 4);
+		neuralNetwork =  new NeuralNetwork(8, 2, 7, 4);
 	}
 	
 	Gene(Gene parent){
@@ -57,6 +74,10 @@ public class Gene {
 		if(size > 24) {
 			size = 24;
 		}
+		
+		speed = behaveSpeed.getSpeed(speed);
+		size = behaveSize.getSize(size);
+		lifeSpan = behaveLifespan.getLifespan(lifeSpan);
 	}
 	
 	private void mutateColor(Color parentColour) {

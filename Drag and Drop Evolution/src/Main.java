@@ -207,7 +207,7 @@ public class Main extends PApplet {
 			
 		float totalLifeSpan = 0;
 		for (Animal an : env.animals) {
-			totalLifeSpan += an.startingLifeSpan;
+			totalLifeSpan += an.gene.lifeSpan;
 		}
 		float returnVal = totalLifeSpan / (env.animals.size() * 1000);
 		return returnVal;
@@ -247,7 +247,7 @@ public class Main extends PApplet {
 		
 		float totalSpeed = 0;
 		for (Animal an : env.animals) {
-			totalSpeed += an.movementSpeed;
+			totalSpeed += an.gene.speed;
 		}
 		float returnVal = totalSpeed / env.animals.size();
 		return returnVal;
