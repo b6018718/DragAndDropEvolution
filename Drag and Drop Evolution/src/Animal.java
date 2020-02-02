@@ -13,7 +13,7 @@ public class Animal extends EnvironmentObject {
 	float standardSize;
 	float direction;
 	float movementSpeed;
-	float topWaterSpeed = 50;
+	float topWaterSpeed = 100;
 	int id;
 	boolean keepTurning = false;
 	boolean isDead = false;
@@ -134,6 +134,9 @@ public class Animal extends EnvironmentObject {
 				// Turning
 				deltaTime = deltaTime * 0.7f;
 		}
+		
+		// Calculate water movement
+		deltaTime = gene.behaveWaterMove.getWaterMovement(deltaTime, insideWater);
 			
 		PVector aimVector = getAimVector(deltaTime);
 		if(collide(aimVector, deltaTime)) {
@@ -181,11 +184,13 @@ public class Animal extends EnvironmentObject {
 	
 	private PVector getAimVector(float deltaTime) {		
 		//Time based animation
-		float movementWithDelta;
-		if(!inWater()) {
-			movementWithDelta = movementSpeed * deltaTime;
-		}else {
+		float movementWithDelta = movementSpeed * deltaTime;
+		if(inWater() && gene.behaveWaterMove instanceof amphibious) {
 			float waterSpeed = (float) (topWaterSpeed - gene.speed);
+			if(waterSpeed > 75)
+				waterSpeed = 75;
+			if(waterSpeed < 25)
+				waterSpeed = 25;
 			if(waterSpeed < 1)
 				waterSpeed = 1;
 			movementWithDelta = waterSpeed * deltaTime;
@@ -436,10 +441,14 @@ public class Animal extends EnvironmentObject {
 		//if(turning)
 			//timeTillStarve = timeTillStarve - lastLoopTime;
 		//else
+		float waterLastLoop = lastLoopTime;
+		if(insideWater)
+			waterLastLoop = gene.behaveWaterMove.getWaterHunger(lastLoopTime);
+		
 		if(restMode) {
-			timeTillStarve = timeTillStarve - lastLoopTime * 0.5f;
+			timeTillStarve = timeTillStarve - waterLastLoop * 0.5f;
 		} else {
-			timeTillStarve = timeTillStarve - lastLoopTime;
+			timeTillStarve = timeTillStarve - waterLastLoop;
 		}
 		
 		float lifeRemaining = lifeSpanInMs / startingLifeSpan;

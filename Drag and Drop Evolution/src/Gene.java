@@ -15,8 +15,7 @@ public class Gene {
 	// If mutation is allowed
 	public boolean mutate;
 	
-	// Behaviour
-	
+	//             *** Behaviour ***
 	// Speed
 	//public BehaviourSpeed behaveSpeed = new slow();
 	public BehaviourSpeed behaveSpeed = new dynamicSpeed();
@@ -29,8 +28,13 @@ public class Gene {
 	
 	// Lifespan
 	//public BehaviourLifespan behaveLifespan = new shortLife();
-	//public BehaviourLifespan behaveLifespan = new dynamicLifespan();
-	public BehaviourLifespan behaveLifespan = new longLife();
+	public BehaviourLifespan behaveLifespan = new dynamicLifespan();
+	//public BehaviourLifespan behaveLifespan = new longLife();
+	
+	// Water movement
+	//public BehaviourWaterMovement behaveWaterMove =  new hydrophile();
+	//public BehaviourWaterMovement behaveWaterMove = new hydrophobe();
+	public BehaviourWaterMovement behaveWaterMove = new amphibious();
 	
 	public void generateRandomNetwork() {
 		neuralNetwork =  new NeuralNetwork(8, 2, 7, 4);
