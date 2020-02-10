@@ -5,13 +5,14 @@ import java.util.Set;
 import org.gicentre.utils.geom.HashGrid;
 
 import processing.core.PApplet;
+import processing.core.PImage;
 import processing.core.PVector;
 
 public class Environment {
 	// Processing applet
 	PApplet pro;
 	// Starting population animal count
-	int numOfAnimals = 30;
+	int numOfAnimals = 10;
 	// Max size of animals
 	float maxObjectSize = 24f;
 	// Amount of food
@@ -32,8 +33,8 @@ public class Environment {
 	UI userInterface;
 	// UI setting
 	float speedMultiplier = 1;
-	// Generations
-	int generations = 1;
+	
+	boolean paused = false;
 	
 	// Line between animals
 	boolean showLines = false;
@@ -41,19 +42,23 @@ public class Environment {
 	// Walls
 	ArrayList<Wall> walls = new ArrayList<Wall>();
 	
-	ArrayList<Animal> animals = new ArrayList<Animal>();
+	//ArrayList<Animal> animals = new ArrayList<Animal>();
 	ArrayList<Food> foodArray = new ArrayList<Food>();
 	ArrayList<Egg> eggArray = new ArrayList<Egg>();
 	
-	ArrayList<Animal> topTenAnimals = new ArrayList<Animal>();
+	//ArrayList<Animal> topTenAnimals = new ArrayList<Animal>();
 	ArrayList<RectObj> sea = new ArrayList<RectObj>();
-	
+	ArrayList<Species> speciesArray = new ArrayList<Species>();
+	ArrayList<Animal> selectedSpecies = null;
+	int speciesCount = 0;
 	ImageManager imageManager;
 	
-	Environment(PApplet processing, RectObj env){
+	float tempSpeedMultipler;
+	
+	Environment(PApplet processing, RectObj env, ImageManager imageManager){
 		pro = processing;
 		this.env = env;
-		imageManager = new ImageManager(pro);
+		this.imageManager = imageManager;
 		
 		// Get the max proper max size
 		maxObjectSize = calculateObjectSize();
@@ -64,48 +69,63 @@ public class Environment {
 		}
 		
 		setupWalls();
-		createAnimals();
+		//createAnimals();
 		createInitialFood();
 	}
 	
 	private void setupWalls() {
 		//Top wall
-		walls.add(new Wall(env.x, env.y, env.topX, env.y));
+		walls.add(new Wall(env.x, env.y, env.topX, env.y, false));
 		// Right wall
-		walls.add(new Wall(env.topX, env.y, env.topX, env.topY));
+		walls.add(new Wall(env.topX, env.y, env.topX, env.topY, false));
 		//Bottom wall
-		walls.add(new Wall(env.x, env.topY, env.topX, env.topY));
+		walls.add(new Wall(env.x, env.topY, env.topX, env.topY, false));
 		// Left wall
-		walls.add(new Wall(env.x, env.y, env.x, env.topY));
+		walls.add(new Wall(env.x, env.y, env.x, env.topY, false));
 	}
 	
-	private void createAnimals() {
+	public void createSpecies(PImage animalImage, BehaviourSpeed behaveSpeed, BehaviourSize behaveSize, BehaviourLifespan behaveLifespan, BehaviourWaterMovement behaveWaterMovement) {
+		speciesArray.add(new Species(this.pro, this, userInterface, speciesCount, animalImage, behaveSpeed, behaveSize, behaveLifespan, behaveWaterMovement));
+		speciesCount = speciesCount + 1;
+		createAnimals(speciesArray.get(speciesArray.size() -1));
+	}
+	
+	private void createAnimals(Species species) {
 		// Create the animals
 		for(int i = 0; i < numOfAnimals; i++) {
-			if(!topTenAnimals.isEmpty()) {
-				addAnimal(new Gene(topTenAnimals.get((int) (pro.random(topTenAnimals.size()) ) ).gene) , null);
+			if(!species.absoluteUnits.isEmpty()) {
+				addAnimal(new Gene(species.absoluteUnits.get((int) (pro.random(species.absoluteUnits.size() - 1))).gene, species) , null, species);
 			} else {
-				addAnimal(new Gene(null), null);
+				addAnimal(new Gene(null, species), null, species);
 			}
 		}
-		topTenAnimals.clear();
+		species.absoluteUnits.clear();
 	}
 	
-	public void reset() {
+	public void reset(Species species) {
 		if(useHashGrid) {
-			hashGrid.removeAll(animals);
-			hashGrid.removeAll(foodArray);
+				hashGrid.removeAll(species.animals);
+			//hashGrid.removeAll(foodArray);
 		}
-		animals.clear();
-		foodArray.clear();
-		eggArray.clear();
-		foodCounter = 2000;
 		
-		generations++;
-		userInterface.clearCharts();
-		createAnimals();
-		createInitialFood();
-		setMachineLearning(userInterface.learnCheckBox.isSelected());
+		/*for (int i = 0; i < speciesArray.size(); i++) {
+			speciesArray.get(i).animals.clear();
+			speciesArray.get(i).generations++;
+		}*/
+		
+		species.animals.clear();
+		
+		//foodArray.clear();
+		//eggArray.clear();
+		//foodCounter = 2000;
+		
+		species.clearCharts();
+		//for (Species species : speciesArray) {
+		createAnimals(species);
+		//}
+		
+		//createInitialFood();
+		//setMachineLearning(userInterface.learnCheckBox.isSelected());
 	}
 	
 	void createInitialFood() {
@@ -115,6 +135,14 @@ public class Environment {
 	}
 	
 	void draw(float deltaTime, int lastLoopTime) {
+		boolean switched = false;
+		if(paused) {
+			tempSpeedMultipler = speedMultiplier;
+			speedMultiplier = 0;
+			paused = false;
+			switched = true;
+		}
+			
 		deltaTime = deltaTime * speedMultiplier;
 		lastLoopTime = (int) (lastLoopTime * speedMultiplier);
 		//pro.stroke(0);
@@ -123,12 +151,16 @@ public class Environment {
 		pro.rect(env.x, env.y, env.width, env.height);
 		
 		//Save the best animal for next generation
-		if (animals.size() < 5 && this.topTenAnimals.isEmpty()) {
-			topTenAnimals.addAll(animals);
-		} else if (animals.size() == 0) {
-			reset();
-		} else if(animals.size() > 6 && !topTenAnimals.isEmpty()) {
-			topTenAnimals.clear();
+		for(int i = 0; i < speciesArray.size(); i++) {
+			ArrayList<Animal> animals = speciesArray.get(i).animals;
+			ArrayList<Animal> topTenAnimals = speciesArray.get(i).absoluteUnits;
+			if (animals.size() < 5 && topTenAnimals.isEmpty()) {
+				topTenAnimals.addAll(animals);
+			} else if (animals.size() == 0) {
+				reset(speciesArray.get(i));
+			} else if(animals.size() > 6 && !topTenAnimals.isEmpty()) {
+				topTenAnimals.clear();
+			}
 		}
 		
 		showSea();
@@ -140,12 +172,16 @@ public class Environment {
 		showEggs(lastLoopTime);
 		
 		// Iterate over the loop backwards so that we can remove animals from the list
-		for(int i = animals.size()-1; i >= 0; i--) {
-			Animal an = animals.get(i);
-			an.show();
-			an.move(deltaTime);
-			animalReproduce(an, lastLoopTime);
-			an.checkIfDead(lastLoopTime);
+		for(int i = speciesArray.size()-1; i >= 0; i--) {
+			Species species = speciesArray.get(i);
+			for(int j = species.animals.size()-1; j >= 0; j--) {
+				Animal an = species.animals.get(j);
+				an.show();
+				an.move(deltaTime);
+				animalReproduce(an, lastLoopTime);
+				an.checkIfDead(lastLoopTime);
+				
+			}
 		}
 		
 		// Draw walls
@@ -157,13 +193,16 @@ public class Environment {
 		
 		if(useHashGrid)
 			hashGrid.updateAll();
+		
+		if(switched)
+			speedMultiplier = tempSpeedMultipler;
 	}
 	
 	void showEggs(int lastLoopTime) {
 		for(int i = eggArray.size()-1; i >= 0; i--) {
 			Egg egg = eggArray.get(i);
 			if(egg.hatch(lastLoopTime)) {
-				addAnimal(egg.gene, egg.position);
+				addAnimal(egg.gene, egg.position, egg.gene.species);
 				eggArray.remove(egg);
 			} else {
 				egg.show();
@@ -182,8 +221,10 @@ public class Environment {
 	}
 	
 	void showSelectedAnimal() {
-		for (Animal animal : animals) {
-			animal.showSelectedCircle();
+		for (Species species : speciesArray) {
+			for (Animal animal : species.animals) {
+				animal.showSelectedCircle();
+			}
 		}
 	}
 	
@@ -203,17 +244,24 @@ public class Environment {
 	}
 	
 	void addFood() {
-		foodArray.add(new Food(pro, animals, foodArray, this, hashGrid, null));
+		foodArray.add(new Food(pro, speciesArray, foodArray, this, hashGrid, null));
 		if(useHashGrid) {
 			hashGrid.add(foodArray.get(foodArray.size() - 1));
 		}
 	}
 	
-	void addAnimal(Gene gene, PVector eggPos) {
-		animals.add(new Animal(pro, animals, foodArray, this, hashGrid, imageManager, gene, eggPos));
-		if(useHashGrid) {
-			hashGrid.add(animals.get(animals.size() -1));
+	void addAnimal(Gene gene, PVector eggPos, Species species) {
+		for(int i = 0; i < speciesArray.size(); i++) {
+			if(species == speciesArray.get(i)) {
+				// Create new animal
+				ArrayList<Animal> animals = speciesArray.get(i).animals;
+				animals.add(new Animal(pro, speciesArray, foodArray, this, hashGrid, imageManager, gene, eggPos));
+				if(useHashGrid) {
+					hashGrid.add(animals.get(animals.size() -1));
+				}
+			}
 		}
+		
 	}
 	
 	void clickOnEnv(PVector mouseZoomed, PVector mouseUnzoomed) {
@@ -222,7 +270,9 @@ public class Environment {
 			if(hashGrid != null) {
 				an = checkForAnimalCollisions(mouseZoomed, null);
 			} else {
-				an = checkForAnimalCollisions(mouseZoomed, animals);
+				for (int i = 0; i < speciesArray.size(); i++) {
+					an = checkForAnimalCollisions(mouseZoomed, speciesArray.get(i).animals);
+				}
 			}
 			// Send the selected animal to the user interface
 			unselectAllAnimals();
@@ -281,8 +331,10 @@ public class Environment {
 	}
 	
 	public void unselectAllAnimals() {
-		for (Animal animal : animals) {
-			animal.isSelected = false;
+		for (Species species : speciesArray) {
+			for (Animal animal : species.animals) {
+				animal.isSelected = false;
+			}
 		}
 	}
 	
@@ -295,8 +347,10 @@ public class Environment {
 	}
 	
 	public void setMachineLearning(boolean learningBool) {
-		for (Animal animal : animals) {
-			animal.gene.mutate = learningBool;
+		for (Species species : speciesArray) {
+			for (Animal animal : species.animals) {
+				animal.gene.mutate = learningBool;
+			}
 		}
 		
 		for(Egg egg: eggArray) {
@@ -317,6 +371,14 @@ public class Environment {
 			RectObj seaSquare = sea.get(i);
 			pro.fill(10, 0, 175);
 			pro.rect(seaSquare.x, seaSquare.y, seaSquare.width, seaSquare.height);
+		}
+	}
+	
+	public void getSelectedSpecies() {
+		for (int i = 0; i < speciesArray.size(); i++) {
+			if(speciesArray.get(i).animalSelected) {
+				selectedSpecies = speciesArray.get(i).animals;
+			}
 		}
 	}
 }

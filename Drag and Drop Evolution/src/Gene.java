@@ -10,46 +10,44 @@ public class Gene {
 	// 5% chance of mutation
 	private double mutationChance = 0.5;
 	// 20% variation spread per mutation (-/+)
-	private double mutationRate = 0.1;
-	private double behaviourMutationRate = 0.05;
+	private double mutationRate = 0.15;
+	private double behaviourMutationRate = 0.1;
 	// If mutation is allowed
-	public boolean mutate;
-	
-	//             *** Behaviour ***
-	// Speed
-	//public BehaviourSpeed behaveSpeed = new slow();
-	public BehaviourSpeed behaveSpeed = new dynamicSpeed();
-	//public BehaviourSpeed behaveSpeed = new fast();
-	
-	// Size
-	//public BehaviourSize behaveSize = new big();
-	public BehaviourSize behaveSize = new dynamicSize();
-	//public BehaviourSize behaveSize = new small();
-	
-	// Lifespan
-	//public BehaviourLifespan behaveLifespan = new shortLife();
-	public BehaviourLifespan behaveLifespan = new dynamicLifespan();
-	//public BehaviourLifespan behaveLifespan = new longLife();
-	
-	// Water movement
-	//public BehaviourWaterMovement behaveWaterMove =  new hydrophile();
-	//public BehaviourWaterMovement behaveWaterMove = new hydrophobe();
-	public BehaviourWaterMovement behaveWaterMove = new amphibious();
+	public boolean mutate = true;
+	public Species species;
 	
 	public void generateRandomNetwork() {
 		neuralNetwork =  new NeuralNetwork(8, 2, 7, 4);
 	}
 	
-	Gene(Gene parent){
+	Gene(Gene parent, Species species){
+		this.species = species;
 		if (parent == null) {
+			//behaveSpeed = new slow();
+			//behaveSpeed = new dynamicSpeed();
+			//behaveSpeed = new fast();
+			
+			//behaveSize = new big();
+			//behaveSize = new dynamicSize();
+			//behaveSize = new small();
+			
+			//behaveLifespan = new shortLife();
+			//behaveLifespan = new dynamicLifespan();
+			//behaveLifespan = new longLife();
+			
+			//behaveWaterMove = new hydrophile();
+			//behaveWaterMove = new hydrophobe();
+			//behaveWaterMove = new amphibious();
+			
 			size = 12;
 			speed = 50;
 			lifeSpan = 60000;
 			colour = null;
 			generateRandomNetwork();
-			neuralNetwork.setActivationFunction(ActivationFunction.SIGMOID);
-			mutate = false;
+			neuralNetwork.setActivationFunction(ActivationFunction.RELU);
+			//neuralNetwork.setLearningRate(2);
 		} else {
+			
 			mutate = parent.mutate;
 			// If no mutation, generate a random new network
 			if(mutate)
@@ -79,9 +77,9 @@ public class Gene {
 			size = 24;
 		}
 		
-		speed = behaveSpeed.getSpeed(speed);
-		size = behaveSize.getSize(size);
-		lifeSpan = behaveLifespan.getLifespan(lifeSpan);
+		speed = species.behaveSpeed.getSpeed(speed);
+		size = species.behaveSize.getSize(size);
+		lifeSpan = species.behaveLifespan.getLifespan(lifeSpan);
 	}
 	
 	private void mutateColor(Color parentColour) {

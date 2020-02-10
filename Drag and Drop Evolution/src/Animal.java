@@ -41,6 +41,7 @@ public class Animal extends EnvironmentObject {
 	
 	// Water
 	boolean insideWater = false;
+	boolean nearestWallIsSolid = true;
 	
 	// Machine learning
 	Gene gene;
@@ -50,9 +51,9 @@ public class Animal extends EnvironmentObject {
 	// This processor object allows us to access Processor methods outside of the main class
 	//PApplet pro;
 	
-	Animal(PApplet parent, ArrayList <Animal> animals, ArrayList <Food> foodArray, Environment env, HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager, Gene gene, PVector eggPos){
+	Animal(PApplet parent, ArrayList <Species> species, ArrayList <Food> foodArray, Environment env, HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager, Gene gene, PVector eggPos){
 		// Add the processing applet into the class
-		super(parent, env, animals, foodArray, hashGrid, imageManager);
+		super(parent, env, species, foodArray, hashGrid, imageManager);
 		this.gene = gene;
 		this.width = (float) gene.size;
 		this.startingLifeSpan = (float) gene.lifeSpan;
@@ -62,7 +63,7 @@ public class Animal extends EnvironmentObject {
 		
 		// Set the attributes
 		// This is technically a bug, can get situations where certain animals have the same id
-		this.id = animals.size();
+		this.id = gene.species.globalSpeciesNumber++;
 		
 		// Survival
 		int placeAttempts = 20;
@@ -132,11 +133,11 @@ public class Animal extends EnvironmentObject {
 				deltaTime = deltaTime * 0.2f;
 			else
 				// Turning
-				deltaTime = deltaTime * 0.7f;
+				deltaTime = deltaTime * 0.45f;
 		}
 		
 		// Calculate water movement
-		deltaTime = gene.behaveWaterMove.getWaterMovement(deltaTime, insideWater);
+		deltaTime = gene.species.behaveWaterMovement.getWaterMovement(deltaTime, insideWater);
 			
 		PVector aimVector = getAimVector(deltaTime);
 		if(collide(aimVector, deltaTime)) {
@@ -164,7 +165,7 @@ public class Animal extends EnvironmentObject {
 		if(timeTillLayEgg < 0 && eatenOnce) {
 			// Lay egg
 			timeTillLayEgg = startingTimeTillLayEgg;
-			return new Egg(pro, env, animals, foodArray, hashGrid, imageManager, gene, position);
+			return new Egg(pro, env, species, foodArray, hashGrid, imageManager, gene, position);
 		}
 		return null;
 	}
@@ -173,7 +174,7 @@ public class Animal extends EnvironmentObject {
 	public void show() {
 		// Image selected
 		pro.tint(colour.r, colour.g, colour.b, 255);
-		pro.image(imageManager.animalImage, position.x, position.y, width, width);
+		pro.image(gene.species.animalImage, position.x, position.y, width, width);
 		pro.noTint();
 	}
 	
@@ -185,7 +186,8 @@ public class Animal extends EnvironmentObject {
 	private PVector getAimVector(float deltaTime) {		
 		//Time based animation
 		float movementWithDelta = movementSpeed * deltaTime;
-		if(inWater() && gene.behaveWaterMove instanceof amphibious) {
+		inWater();
+		if(insideWater && gene.species.behaveWaterMovement instanceof amphibious) {
 			float waterSpeed = (float) (topWaterSpeed - gene.speed);
 			if(waterSpeed > 75)
 				waterSpeed = 75;
@@ -293,15 +295,6 @@ public class Animal extends EnvironmentObject {
 		return largest;
 	}
 	
-	private double getSmallestValueInArr(ArrayList<Double> arr) {
-		int smallest = 0;
-		for (int i = 1; i < arr.size(); i++) {
-			if(arr.get(i) < arr.get(smallest))
-				smallest = i;
-		}
-		return arr.get(smallest);
-	}
-	
 	private int getIndexOfMin(double [] arr) {
 		int smallest = 0;
 		for (int i = 1; i < arr.length; i++) {
@@ -329,20 +322,30 @@ public class Animal extends EnvironmentObject {
 	
 	private void setWallDistance() {
 		PVector middlePosition = new PVector(position.x + this.width / 2, position.y + this.width / 2);
-		ArrayList<Double> dists = new ArrayList<Double>();
+		PVector smallestIntersect = null;
+		double smallestDist = 30000;
 		for (Wall wall : env.walls) {
 			PVector intersect = doesRayIntersectWall(wall);
 			if(intersect != null) {
-				dists.add((double) intersect.dist(middlePosition));
-				if(env.showLines)
-					pro.line(middlePosition.x, middlePosition.y, intersect.x, intersect.y);
+				if(smallestIntersect == null) {
+					smallestIntersect = intersect;
+					smallestDist = intersect.dist(middlePosition);
+					nearestWallIsSolid = !wall.waterWall;
+				} else {
+					double dist = intersect.dist(middlePosition);
+					if(dist < smallestDist) {
+						smallestIntersect = intersect;
+						smallestDist = dist;
+						nearestWallIsSolid = !wall.waterWall;
+					}
+				}
 			}
 		}
 		
-		if(dists.size() > 0)
-			this.distanceToWall = (double) getSmallestValueInArr(dists);
-		else
-			this.distanceToWall = -1;
+		if(env.showLines && smallestIntersect != null)
+			pro.line(middlePosition.x, middlePosition.y, smallestIntersect.x, smallestIntersect.y);
+		
+		this.distanceToWall = smallestDist;
 	}
 	
 	
@@ -438,12 +441,7 @@ public class Animal extends EnvironmentObject {
 		
 		lifeSpanInMs = lifeSpanInMs - lastLoopTime;
 		
-		//if(turning)
-			//timeTillStarve = timeTillStarve - lastLoopTime;
-		//else
-		float waterLastLoop = lastLoopTime;
-		if(insideWater)
-			waterLastLoop = gene.behaveWaterMove.getWaterHunger(lastLoopTime);
+		float waterLastLoop = gene.species.behaveWaterMovement.getHunger(lastLoopTime, insideWater);
 		
 		if(restMode) {
 			timeTillStarve = timeTillStarve - waterLastLoop * 0.5f;
@@ -514,7 +512,7 @@ public class Animal extends EnvironmentObject {
 	private void removeAnimalFromArray() {
 		if(hashGrid != null)
 			hashGrid.remove(this);
-		animals.remove(this);
+		gene.species.animals.remove(this);
 	}
 	
 //	private void addFoodAtDeathLocation() {
@@ -528,15 +526,17 @@ public class Animal extends EnvironmentObject {
 		if(hashGrid != null) {
 			return checkForCollisions(collidePos, null, deltaTime);
 		} else {
-			if(checkForCollisions(collidePos, animals, deltaTime))
-				return true;
+			for(int i = 0; i < species.size(); i++) {
+				if(checkForCollisions(collidePos, species.get(i).animals, deltaTime))
+					return true;
+			}
 			checkForCollisions(collidePos, foodArray, deltaTime);
 		}
 		return false;
 	}
 
 	private boolean checkForCollisions(PVector collidePos, ArrayList<? extends EnvironmentObject> arrList, float deltaTime) {
-		if(this.distanceToWall <= this.width + this.movementSpeed * deltaTime * 2)
+		if(this.distanceToWall <= this.width + this.movementSpeed * deltaTime && nearestWallIsSolid)
 			return true;
 		
 		Set<EnvironmentObject> objectsInRange;

@@ -1,18 +1,21 @@
 
 public interface BehaviourWaterMovement {
-	float getWaterHunger(float hunger);
 	float getWaterMovement(float movement, boolean inWater);
+	float getHunger(float movement, boolean inWater);
 }
 
 class hydrophile implements BehaviourWaterMovement {
-
-	public float getWaterHunger(float hunger) {
-		return hunger;
+	
+	public float getHunger(float hunger, boolean inWater) {
+		if(inWater)
+			return hunger;
+		else
+			return hunger * 4;
 	}
 	
 	public float getWaterMovement(float movement, boolean inWater) {
 		if(inWater)
-			return movement * 1.5f;
+			return movement * 1.25f;
 		else
 			return movement * 0.3f;
 	}
@@ -20,13 +23,16 @@ class hydrophile implements BehaviourWaterMovement {
 
 class hydrophobe implements BehaviourWaterMovement {
 	
-	public float getWaterHunger(float hunger) {
-		return hunger * 1.5f;
+	public float getHunger(float hunger, boolean inWater) {
+		if(!inWater)
+			return hunger;
+		else
+			return hunger * 4;
 	}
 	
 	public float getWaterMovement(float movement, boolean inWater) {
 		if(!inWater)
-			return movement * 1.5f;
+			return movement * 1.25f;
 		else
 			return movement * 0.3f;
 	}
@@ -34,7 +40,7 @@ class hydrophobe implements BehaviourWaterMovement {
 
 class amphibious implements BehaviourWaterMovement {
 	
-	public float getWaterHunger(float hunger) {
+	public float getHunger(float hunger, boolean inWater) {
 		return hunger;
 	}
 	

@@ -13,16 +13,16 @@ public class EnvironmentObject implements Locatable {
 	protected PApplet pro;
 	protected float width;
 	protected Environment env;
-	protected ArrayList <Animal> animals;
+	protected ArrayList <Species> species;
 	protected ArrayList <Food> foodArray;
 	protected HashGrid<EnvironmentObject> hashGrid = null;
 	public boolean isSelected = false;
 	ImageManager imageManager = null;
 	
-	EnvironmentObject(PApplet pro, Environment env, ArrayList<Animal> animals, ArrayList <Food> foodArray, HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager){
+	EnvironmentObject(PApplet pro, Environment env, ArrayList<Species> species, ArrayList <Food> foodArray, HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager){
 		this.pro = pro;
 		this.env = env;
-		this.animals = animals;
+		this.species = species;
 		this.foodArray = foodArray;
 		this.hashGrid = hashGrid;
 		this.imageManager = imageManager;

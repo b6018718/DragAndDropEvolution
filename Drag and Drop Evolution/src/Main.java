@@ -11,7 +11,7 @@ import g4p_controls.GEvent;
 import g4p_controls.GToggleControl;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 1.7";
+	String versionNumber = "Alpha 1.8";
 	
 	// Screen dimensions
 	int scWidth;
@@ -32,6 +32,7 @@ public class Main extends PApplet {
 	// Environment
 	Environment env;
 	UI userInterface;
+	ImageManager imageManager;
 
 	// Graph features
 	int saveDataPerSecond = 5;
@@ -74,9 +75,10 @@ public class Main extends PApplet {
 		int envWidth = (int) (scWidth * (1 - offset));
 		
 		RectObj envArea = new RectObj(envX, envY, envWidth, envHeight);
-		env = new Environment(this, envArea);
+		imageManager = new ImageManager(this);
+		env = new Environment(this, envArea, imageManager);
 		// Load images
-		userInterface = new UI(this, env, offset);
+		userInterface = new UI(this, env, offset, imageManager);
 		env.setUi(userInterface);
 		
 		frameRate(60);
@@ -120,13 +122,16 @@ public class Main extends PApplet {
 		env.showSelectedAnimal();
 		userInterface.zoomEnd();
 		
+		
 		addDataToCharts();
 		userInterface.display();
 		// Draw Text
-		String numOfAnimalsString = "Number of animals: " + env.animals.size();
-		textSize(scWidth/30);
-		fill(0,0,0);
-		text(numOfAnimalsString, (float) (scWidth * 0.05), (float) (scHeight * 0.08));
+		if(env.selectedSpecies != null) {
+			String numOfAnimalsString = "Number of animals: " + env.selectedSpecies.size();
+			textSize(scWidth/30);
+			fill(0,0,0);
+			text(numOfAnimalsString, (float) (scWidth * 0.05), (float) (scHeight * 0.08));
+		}
 		
 		// Draw framerate
 		showFPS();
@@ -136,10 +141,7 @@ public class Main extends PApplet {
 	}
 	
 	public void keyPressed() {
-		if (key == 'c' || key == 'C') {
-			env.reset();
-			secondCount = 0;
-		} else if(key == 'l' || key == 'L') {
+		if(key == 'l' || key == 'L') {
 			env.showAnimalLines();
 		} else if(key == 'w' || key == 'W') {
 			userInterface.beginDrawingWalls();
@@ -154,11 +156,11 @@ public class Main extends PApplet {
 			PVector mouseZoomed = userInterface.zoomer.getMouseCoord();
 			PVector mouseUi = new PVector(mouseX, mouseY);
 			
-			if(env.isInsideEnv(mouseUi)) {
+			/*if(env.isInsideEnv(mouseUi)) {
 				userInterface.zoomer.setMouseMask(0);
 			} else {
 				userInterface.zoomer.setMouseMask(-1);
-			}
+			}*/
 			
 			env.clickOnEnv(mouseZoomed, mouseUi);
 			userInterface.checkCollisions(mouseUi);
@@ -184,77 +186,79 @@ public class Main extends PApplet {
 	
 	public void addDataToCharts() {
 		// Add to the chart array
-		if(secondPassedFrame) {
-			// FPS Chart
-			userInterface.fpsLineChart.addData(secondCount, timer.getFrameRate());
-			fps = timer.getFrameRateAsText();
-			// Animal population
-			userInterface.animalPopulation.addData(secondCount, env.animals.size());
-			userInterface.birthRate.addData(secondCount, calculateAverageBirthRateInSeconds());
-			userInterface.sizeChart.addData(secondCount, calculateAverageSize());
-			userInterface.speedChart.addData(secondCount, calculateAverageSpeed());
-			userInterface.foodChart.addData(secondCount, env.foodArray.size());
-			userInterface.hungerChart.addData(secondCount, calculateAverageHunger());
+		if(secondPassedFrame && env.selectedSpecies != null) {
+			for (Species species : env.speciesArray) {
+				// FPS Chart
+				species.fpsLineChart.addData(secondCount, timer.getFrameRate());
+				fps = timer.getFrameRateAsText();
+				// Animal population
+				species.animalPopulation.addData(secondCount, env.selectedSpecies.size());
+				species.birthRate.addData(secondCount, calculateAverageBirthRateInSeconds());
+				species.sizeChart.addData(secondCount, calculateAverageSize());
+				species.speedChart.addData(secondCount, calculateAverageSpeed());
+				species.foodChart.addData(secondCount, env.foodArray.size());
+				species.hungerChart.addData(secondCount, calculateAverageHunger());
+			}
 		}
 	}
 	
 	
-	
 	public float calculateAverageBirthRateInSeconds() {
-		if(env.animals.size() == 0) {
+		if(env.selectedSpecies.size() == 0) {
 			return 0;
 		}
 			
 		float totalLifeSpan = 0;
-		for (Animal an : env.animals) {
+		for (Animal an : env.selectedSpecies) {
 			totalLifeSpan += an.gene.lifeSpan;
 		}
-		float returnVal = totalLifeSpan / (env.animals.size() * 1000);
+		float returnVal = totalLifeSpan / (env.selectedSpecies.size() * 1000);
 		return returnVal;
 	}
 	
 	public float calculateAverageHunger() {
-		if(env.animals.size() == 0) {
+		if(env.selectedSpecies.size() == 0) {
 			return 0;
 		}
 		
 		float totalHunger = 0;
-		for (Animal an : env.animals) {
+		for (Animal an : env.selectedSpecies) {
 			totalHunger += an.normaliseHunger();
 		}
-		float returnVal = totalHunger / env.animals.size();
+		float returnVal = totalHunger / env.selectedSpecies.size();
 		return 1 - returnVal;
 		
 	}
 	
 	public float calculateAverageSize() {
-		if(env.animals.size() == 0) {
+		if(env.selectedSpecies.size() == 0) {
 			return 0;
 		}
 		
 		float totalSize = 0;
-		for (Animal an : env.animals) {
+		for (Animal an : env.selectedSpecies) {
 			totalSize += an.width;
 		}
-		float returnVal = totalSize / env.animals.size();
+		float returnVal = totalSize / env.selectedSpecies.size();
 		return returnVal;
 	}
 	
 	public float calculateAverageSpeed() {
-		if(env.animals.size() == 0) {
+		if(env.selectedSpecies.size() == 0) {
 			return 0;
 		}
 		
 		float totalSpeed = 0;
-		for (Animal an : env.animals) {
+		for (Animal an : env.selectedSpecies) {
 			totalSpeed += an.gene.speed;
 		}
-		float returnVal = totalSpeed / env.animals.size();
+		float returnVal = totalSpeed / env.selectedSpecies.size();
 		return returnVal;
 	}
 	
 	public void handleDropListEvents(GDropList list, GEvent event) {
-		userInterface.handleDropListEvents(list, event);
+		if(userInterface.selectedSpecies != null)
+			userInterface.selectedSpecies.handleDropListEvents(list, event);
 	}
 	
 	public void handleButtonEvents(GButton button, GEvent event) {
@@ -264,6 +268,11 @@ public class Main extends PApplet {
 	public void handleToggleControlEvents(GToggleControl checkBox, GEvent event) {
 		userInterface.handleToggleControlEvents(checkBox, event);
 	}
+	
+	public void getAnimalImage() {
+		userInterface.getAnimalImage();
+	}
+	
 	
 	public void saveTableThread() {
 		userInterface.saveTableThread();

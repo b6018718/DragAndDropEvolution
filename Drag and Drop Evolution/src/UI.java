@@ -1,7 +1,6 @@
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.EventListenerProxy;
 
 import org.gicentre.utils.stat.XYChart;
 
@@ -21,34 +20,32 @@ public class UI {
 	ArrayList<UiElement> uiElements = new ArrayList<UiElement>();
 	ArrayList<UiBarChart> barCharts = new ArrayList<UiBarChart>();
 	
-	// Line Charts
-	ArrayList<UiLineChart> uiLineCharts = new ArrayList<UiLineChart>();
-	UiLineChart fpsLineChart;
-	UiLineChart animalPopulation;
-	UiLineChart birthRate;
-	UiLineChart sizeChart;
-	UiLineChart speedChart;
-	UiLineChart foodChart;
-	UiLineChart hungerChart;
-	
 	// Check boxes
 	GCheckbox learnCheckBox;
 	
 	// Buttons
 	GButton saveAsCsvBtn;
+	GButton addAnimal;
+	GButton exitButton;
+	GButton getAnimalImage;
+	GButton createSpecies;
+	
+	// Image button
+	GImageButton animalPanelImage;
+	
+	boolean animalPanel = false;
+	
+	// Text fields
+	GTextField animalNameTextField;
+	
+	// Panels
+	GPanel animalPanelUi;
 	
 	// Neural network
 	UiNeuralNetwork uiNeuralNetwork;
 	
 	// Drop downs
 	GDropList graphSelect;
-	final String POPULATION = "Population";
-	final String LIFESPAN = "Lifespan";
-	final String SIZE = "Size";
-	final String SPEED = "Speed";
-	final String FRAMERATE = "Framerate";
-	final String FOOD = "Food";
-	final String HUNGER = "Hunger";
 	
 	Environment env;
 	PImage viewPort;
@@ -71,25 +68,64 @@ public class UI {
 	boolean seaStarted = false;
 	PVector seaStart = new PVector();
 	
+	ImageManager imageManager;
+	
 	XYChart chart;
 	
-	UI(PApplet pro, Environment env, double uiOffset){
+	// Radio buttons
+	GOption behaviourLifespanDynamic;
+	GOption behaviourLifespanLong;
+	GOption behaviourLifespanShort;
+
+	GOption behaviourSizeDynamic;
+	GOption behaviourSizeBig;
+	GOption behaviourSizeSmall;
+	
+	GOption behaviourSpeedDynamic;
+	GOption behaviourSpeedSlow;
+	GOption behaviourSpeedFast;
+	
+	GOption behaviourWaterAmphibious;
+	GOption behaviourWaterLovesWater;
+	GOption behaviourWaterHatesWater;
+	
+	GToggleGroup lifespanGroup;
+	GToggleGroup sizeGroup;
+	GToggleGroup speedGroup;
+	GToggleGroup waterGroup;
+	
+	// Radio label
+	GLabel lifespanLabel;
+	GLabel sizeLabel;
+	GLabel speedLabel;
+	GLabel waterLabel;
+	
+	Species selectedSpecies = null;
+	
+	ArrayList<GAbstractControl> panelControls = new ArrayList<GAbstractControl>();
+	
+	UI(PApplet pro, Environment env, double uiOffset, ImageManager imageManager){
 		this.pro = pro;
 		this.env = env;
 		this.uiOffset = uiOffset;
+		this.imageManager = imageManager;
 		
+		/*
 		String [] items;
-		
 		graphSelect = new GDropList(pro, pro.width * 0.85f, pro.height * 0.6f, pro.width * 0.1f, pro.height * 0.25f, 4);
 		items = new String [] {POPULATION, LIFESPAN, SIZE, SPEED, FRAMERATE, FOOD, HUNGER};
 		graphSelect.setItems(items, 0);
 		graphSelect.tag = "graphSelect";
+		*/
 		
 		//Set up zoomer 
 		zoomer = new ZoomPan(pro);  // Initialise the zoomer
 		zoomer.setMinZoomScale(1);
-		zoomer.setMaxZoomScale(maxZoom);
-		//zoomer.setMouseMask(PConstants.SHIFT);
+		//zoomer.setMaxZoomScale(maxZoom);
+		zoomer.allowZoomButton(false);
+		zoomer.setZoomMouseButton(PConstants.RIGHT);
+		zoomer.setMaxZoomScale(1);
+		zoomer.setMouseMask(PConstants.SHIFT);
 		
 		// Speed Up Button
 		RectObj speedUpPos = new RectObj(pro.width * 0.4f, pro.height * 0.1f, pro.width * 0.05f, pro.height * 0.05f);
@@ -109,89 +145,224 @@ public class UI {
 		
 		uiElements.add(speedDownUi);
 		
-		// Create population line chart
-		float chartXAn = (float) (pro.width * 0.81);
-		float chartYAn = (float) (pro.height * 0.65);
-		float chartWidthAn = (float) (pro.width * 0.18);
-		float chartHeightAn = (float) (pro.height * 0.25);
-		RectObj anRect = new RectObj(chartXAn, chartYAn, chartWidthAn, chartHeightAn);
-		
-		animalPopulation = new UiLineChart(pro, env, anRect, 1, true, POPULATION);
-		
-		// Frame rate chart
-		fpsLineChart = new UiLineChart(pro, env, anRect, 60, true, FRAMERATE);
-		fpsLineChart.display = false;
-		
-		// Create population line chart
-		birthRate = new UiLineChart(pro, env, anRect, 1, true, LIFESPAN);
-		birthRate.display = false;
-		
-		sizeChart = new UiLineChart(pro, env, anRect, 1, true, SIZE);
-		sizeChart.display = false;
-		
-		speedChart = new UiLineChart(pro, env, anRect, 1, true, SPEED);
-		speedChart.display = false;
-		
-		foodChart = new UiLineChart(pro, env, anRect, 1, true, FOOD);
-		foodChart.display = false;
-		
-		hungerChart = new UiLineChart(pro, env, anRect, 1, true, HUNGER);
-		hungerChart.display = false;
-		
-		uiLineCharts.add(animalPopulation);
-		uiLineCharts.add(birthRate);
-		uiLineCharts.add(sizeChart);
-		uiLineCharts.add(speedChart);
-		uiLineCharts.add(foodChart);
-		uiLineCharts.add(fpsLineChart);
-		uiLineCharts.add(hungerChart);
-		
 		// Create buttons
 		saveAsCsvBtn = new GButton(pro, pro.width * 0.85f, pro.height * 0.925f, pro.width * 0.08f, pro.height * 0.05f, "Save As CSV");
 		saveAsCsvBtn.setLocalColorScheme(GCScheme.ORANGE_SCHEME);
 		
 		// Check boxes
-		learnCheckBox = new GCheckbox(pro, pro.width * 0.7f, pro.height * 0.12f, pro.width * 0.1f, pro.height * 0.1f, "Machine Learning");
+		//learnCheckBox = new GCheckbox(pro, pro.width * 0.7f, pro.height * 0.12f, pro.width * 0.1f, pro.height * 0.1f, "Machine Learning");
+		
+		// Button
+		addAnimal = new GButton(pro, pro.width * 0.05f, pro.height * 0.12f, pro.width * 0.05f, pro.height * 0.05f, "Add Animal");
+		addAnimal.setLocalColorScheme(GCScheme.ORANGE_SCHEME);
 		
 		// Neural network
 		uiNeuralNetwork = new UiNeuralNetwork(pro, pro.width * 0.5f, pro.height * 0.02f, pro.width * 0.2f, pro.height * 0.15f);
-	}
-	
-	public void handleDropListEvents(GDropList list, GEvent event) {
-		String selectedItem = list.getSelectedText();
-		if(list == graphSelect) {
-			hideAllGraphs();
-			switch(selectedItem) {
-			case POPULATION:
-				animalPopulation.display = true;
-				break;
-			case LIFESPAN:
-				birthRate.display = true;
-				break;
-			case SPEED:
-				speedChart.display = true;
-				break;
-			case SIZE:
-				sizeChart.display = true;
-				break;
-			case FRAMERATE:
-				fpsLineChart.display = true;
-				break;
-			case FOOD:
-				foodChart.display = true;
-				break;
-			case HUNGER:
-				hungerChart.display = true;
-				break;
-			}
-		}
 	}
 	
 	public void handleButtonEvents(GButton button, GEvent event) {
 		  if (button == saveAsCsvBtn && event == GEvent.CLICKED) {
 			  // Save the table in a different thread
 			  pro.thread("saveTableThread");
-		  }  
+		  } else if(button == addAnimal && event == GEvent.CLICKED && !animalPanel) {
+			  // *** Spawn animal panel ***
+			  openAnimalPanel();
+		  } else if(button == addAnimal && event == GEvent.CLICKED && animalPanel) {
+			  closeAnimalPanel();
+		  } else if(button == exitButton && event == GEvent.CLICKED && animalPanel) {
+			  closeAnimalPanel();
+		  } else if(button == getAnimalImage && event == GEvent.CLICKED && animalPanel) {
+			  env.paused = true;
+			  getAnimalImage();
+		  } else if(button == createSpecies && event == GEvent.CLICKED && animalPanel) {
+			  env.createSpecies(env.imageManager.animalImages.get(env.imageManager.animalImages.size() -1), getSpeed(), getSize(), getLifespan(), getWaterMove());
+			  closeAnimalPanel();
+		  }
+	}
+	
+	private BehaviourSpeed getSpeed() {
+		if(behaviourSpeedDynamic.isSelected()) {
+			return new dynamicSpeed();
+		} else if(behaviourSpeedSlow.isSelected()) {
+			return new slow();
+		} else {
+			return new fast();
+		}
+	}
+	
+	private BehaviourSize getSize() {
+		if(behaviourSizeDynamic.isSelected()) {
+			return new dynamicSize();
+		} else if(behaviourSizeSmall.isSelected()) {
+			return new small();
+		} else {
+			return new big();
+		}
+	}
+	
+	private BehaviourLifespan getLifespan() {
+		if(behaviourLifespanDynamic.isSelected()) {
+			return new dynamicLifespan();
+		} else if(behaviourLifespanLong.isSelected()) {
+			return new longLife();
+		} else {
+			return new shortLife();
+		}
+	}
+	
+	private BehaviourWaterMovement getWaterMove() {
+		if(behaviourWaterAmphibious.isSelected()) {
+			return new amphibious();
+		} else if(behaviourWaterHatesWater.isSelected()) {
+			return new hydrophobe();
+		} else {
+			return new hydrophile();
+		}
+	}
+	
+	
+	// **************** ANIMAL PANEL **************************
+	private void openAnimalPanel() {
+		animalPanelUi = new GPanel(pro, pro.width * 0.1f, pro.height * 0.1f, pro.width * 0.6f, pro.height * 0.6f, "Creature Creator");
+	  	//animalPanelUi.setDraggable(false);
+	  	animalPanelUi.setCollapsible(false);
+	  	animalPanelUi.setLocalColorScheme(GCScheme.GREEN_SCHEME);
+	  
+	  	float buttonWidth = pro.width * 0.05f;
+	  	float buttonHeight = pro.height * 0.05f;
+	  
+	  	// Create exit button
+	  	exitButton = new GButton(pro, pro.width * 0.54f, pro.height * 0.03f, buttonWidth, buttonHeight, "Exit");
+	  	exitButton.setLocalColorScheme(GCScheme.ORANGE_SCHEME);
+	  	panelControls.add(exitButton);
+	  
+	  	// Animal Name Text Field
+	  	animalNameTextField = new GTextField(pro, pro.width * 0.01f, pro.height * 0.12f, pro.width * 0.09f, pro.height * 0.025f);
+	  	animalNameTextField.setPromptText("Species name");
+	  	panelControls.add(animalNameTextField);
+	  
+	  	// Create animal button
+	  	getAnimalImage = new GButton(pro, pro.width * 0.1f, pro.height * 0.03f, buttonWidth, buttonHeight, "Load Image");
+	  	panelControls.add(getAnimalImage);
+		
+	  	float radioWidth = pro.width * 0.09f;
+	  	float radioHeight = pro.height * 0.03f;
+	  	
+	  	float distanceBetweenRadios = radioWidth * 1.1f;
+	  	
+	  	float startX = pro.width * 0.01f;
+	  	float startY = pro.height * 0.3f;
+	  	
+	  	// LIFESPAN
+	  	lifespanLabel = new GLabel(pro, startX, startY, radioWidth, radioHeight, "Lifespan");
+	  	panelControls.add(lifespanLabel);
+	  	
+		behaviourLifespanDynamic = new GOption(pro, startX, startY + radioHeight, radioWidth, radioHeight, "Evolve freely");
+		behaviourLifespanLong = new GOption(pro, startX, startY + radioHeight * 2, radioWidth, radioHeight, "Long lifespan");
+		behaviourLifespanShort = new GOption(pro, startX, startY + radioHeight * 3, radioWidth, radioHeight, "Short lifespan");
+		
+		panelControls.add(behaviourLifespanDynamic);
+		panelControls.add(behaviourLifespanLong);
+		panelControls.add(behaviourLifespanShort);
+		
+		lifespanGroup = new GToggleGroup();
+		lifespanGroup.addControls(behaviourLifespanDynamic, behaviourLifespanLong, behaviourLifespanShort);
+		behaviourLifespanDynamic.setSelected(true);
+		
+		// SIZE
+		startX = startX + distanceBetweenRadios;
+		sizeLabel = new GLabel(pro, startX, startY, radioWidth, radioHeight, "Size");
+		panelControls.add(sizeLabel);
+
+		behaviourSizeDynamic = new GOption(pro, startX, startY + radioHeight, radioWidth, radioHeight, "Evolve freely");
+		behaviourSizeBig = new GOption(pro, startX, startY + radioHeight * 2, radioWidth, radioHeight, "Big");
+		behaviourSizeSmall = new GOption(pro, startX, startY + radioHeight * 3, radioWidth, radioHeight, "Small");
+		
+		panelControls.add(behaviourSizeDynamic);
+		panelControls.add(behaviourSizeBig);
+		panelControls.add(behaviourSizeSmall);
+		
+		sizeGroup = new GToggleGroup();
+		sizeGroup.addControls(behaviourSizeDynamic, behaviourSizeBig, behaviourSizeSmall);
+		behaviourSizeDynamic.setSelected(true);
+		
+		// SPEED
+		startX = startX + distanceBetweenRadios;
+		speedLabel = new GLabel(pro, startX, startY, radioWidth, radioHeight, "Speed");
+		panelControls.add(speedLabel);
+
+		behaviourSpeedDynamic = new GOption(pro, startX, startY + radioHeight, radioWidth, radioHeight, "Evolve freely");
+		behaviourSpeedFast = new GOption(pro, startX, startY + radioHeight * 2, radioWidth, radioHeight, "Fast");
+		behaviourSpeedSlow = new GOption(pro, startX, startY + radioHeight * 3, radioWidth, radioHeight, "Slow");
+		
+		panelControls.add(behaviourSpeedDynamic);
+		panelControls.add(behaviourSpeedFast);
+		panelControls.add(behaviourSpeedSlow);
+		
+		speedGroup = new GToggleGroup();
+		speedGroup.addControls(behaviourSpeedDynamic, behaviourSpeedFast, behaviourSpeedSlow);
+		behaviourSpeedDynamic.setSelected(true);
+		
+		// Water
+		startX = startX + distanceBetweenRadios;
+		waterLabel = new GLabel(pro, startX, startY, radioWidth, radioHeight, "Swimming");
+		panelControls.add(waterLabel);
+
+		behaviourWaterAmphibious = new GOption(pro, startX, startY + radioHeight, radioWidth, radioHeight, "Evole freely");
+		behaviourWaterHatesWater = new GOption(pro, startX, startY + radioHeight * 2, radioWidth, radioHeight, "Land creature");
+		behaviourWaterLovesWater = new GOption(pro, startX, startY + radioHeight * 3, radioWidth, radioHeight, "Sea creature");
+		
+		panelControls.add(behaviourWaterAmphibious);
+		panelControls.add(behaviourWaterHatesWater);
+		panelControls.add(behaviourWaterLovesWater);
+		
+		waterGroup = new GToggleGroup();
+		waterGroup.addControls(behaviourWaterAmphibious, behaviourWaterHatesWater, behaviourWaterLovesWater);
+		behaviourWaterAmphibious.setSelected(true);
+		
+		// Add animal to environment button
+		createSpecies = new GButton(pro, pro.width * 0.28f, pro.height * 0.53f, buttonWidth, buttonHeight, "Create Animal");
+		panelControls.add(createSpecies);
+		
+		// Connect to the panel
+		for (int i = 0; i < panelControls.size(); i++) {
+			animalPanelUi.addControl(panelControls.get(i));
+		}
+		
+		animalPanel = true;
+	}
+	
+	public void getAnimalImage() {
+		String animalLocation = pro.sketchPath() + "\\src\\data\\Animals";
+		String filePath = G4P.selectInput("Select an image file", "png, jpeg", "Image Files", animalLocation);
+		PImage image = imageManager.addAnimalImage(filePath);
+	
+		// Set animal image
+		try {
+			if(image != null) {
+				animalPanelImage = new GImageButton(pro, pro.width * 0.03f, pro.height * 0.05f, 36, 36, new String[] { filePath, filePath, filePath });
+				animalPanelUi.addControl(animalPanelImage);
+			}
+			filePath = filePath.substring(filePath.lastIndexOf('\\')+1);
+			filePath = filePath.replaceAll("\\.[^.]*$", "");
+			System.out.println(filePath);
+			animalNameTextField.setText(filePath);
+		} catch (Exception e) {
+			System.out.println("Operations cancelled");
+		}
+	}
+	
+	private void closeAnimalPanel() {
+		  animalPanel = false;
+		  // Erase panel
+		  animalPanelUi.dispose();
+		  animalPanelUi = null;
+		  
+		  for (GAbstractControl panelControl : panelControls) {
+			panelControl.dispose();
+			panelControl = null;
+		  }
+		  panelControls.clear();
 	}
 	
 	public void handleToggleControlEvents(GToggleControl checkBox, GEvent event) {
@@ -205,8 +376,9 @@ public class UI {
 	}
 	
 	public void saveTableThread() {
-		  String filePath = G4P.selectFolder("Select where to save CSV file");
-		  ArrayList<UiLineChart> uiLineChartsSave = new ArrayList<UiLineChart>(uiLineCharts);
+	  if(selectedSpecies != null) {
+		  String filePath = G4P.selectOutput("Select where to save CSV file");
+		  ArrayList<UiLineChart> uiLineChartsSave = new ArrayList<UiLineChart>(selectedSpecies.uiLineCharts);
 		  Table table = new Table();
 		  // Add columns
 		  table.addColumn("Seconds");
@@ -225,6 +397,7 @@ public class UI {
 			  }
 		  }
 		  pro.saveTable(table, filePath + "/evolution_data_" + new SimpleDateFormat("yyyyMMddHHmm").format(new Date()) + ".csv");
+	  }  
 	}
 	
 	
@@ -249,7 +422,8 @@ public class UI {
 		showAnimalNetwork();
 		
 		// Show charts
-		showCharts();
+		if(selectedSpecies != null)
+			selectedSpecies.showCharts();
 		
 		// Show wall drawing operations
 		showWallInProgress();
@@ -258,30 +432,14 @@ public class UI {
 		
 		// Show generations
 		pro.fill(0,0,0);
-		pro.text("Generations " + env.generations, pro.width * 0.85f, pro.height * 0.15f);
+		
+		if(env.speciesArray.size() > 0 )
+			pro.text("Generations " + env.speciesArray.get(0).generations, pro.width * 0.85f, pro.height * 0.15f);
 	}
 	
 	private void showAnimalNetwork() {
 		if(barCharts.size() > 0) {
 			uiNeuralNetwork.draw();
-		}
-	}
-	
-	private void hideAllGraphs() {
-		for (UiLineChart lineChart : uiLineCharts) {
-			lineChart.display = false;
-		}
-	}
-	
-	private void showCharts() {
-		for (UiLineChart lineChart : uiLineCharts) {
-			lineChart.show();
-		}
-	}
-	
-	public void clearCharts() {
-		for (UiLineChart chart : uiLineCharts) {
-			chart.dataPoints.clear();
 		}
 	}
 	
@@ -424,7 +582,7 @@ public class UI {
 			// Create the walls
 			if(!this.wallsButtonPressed) {
 				// End drawing
-				env.walls.add(new Wall(this.startingWall.x, this.startingWall.y, pro.mouseX, pro.mouseY));
+				env.walls.add(new Wall(this.startingWall.x, this.startingWall.y, pro.mouseX, pro.mouseY, false));
 				this.startingWall.x = pro.mouseX;
 				this.startingWall.y = pro.mouseY;
 				this.wallsButtonPressed = true;
@@ -492,6 +650,12 @@ public class UI {
 				y = pro.mouseY;
 			
 			env.sea.add(new RectObj(x, y, width, height));
+			// Add water walls
+			env.walls.add( new Wall(x, y, x + width, y, true));
+			env.walls.add( new Wall(x + width, y, x + width, y + height, true));
+			env.walls.add( new Wall(x + width, y + height, x + width, y, true));
+			env.walls.add( new Wall(x, y, x, y + height, true));
+			
 			seaStarted = false;
 		} else if(drawingSea) {
 			seaStart.x = pro.mouseX;

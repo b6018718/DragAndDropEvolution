@@ -10,15 +10,15 @@ public class Egg extends EnvironmentObject {
 	int timeTillHatch = 5000;
 	
 	
-	Egg(PApplet pro, Environment env, ArrayList<Animal> animals, ArrayList<Food> foodArray,
+	Egg(PApplet pro, Environment env, ArrayList<Species> species, ArrayList<Food> foodArray,
 			HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager, Gene parentGene, PVector pos) {
-		super(pro, env, animals, foodArray, hashGrid, imageManager);
+		super(pro, env, species, foodArray, hashGrid, imageManager);
 		position.x = pos.x;
 		position.y = pos.y;
 		//hashGrid.add(this);
 		
 		// Mutate genes
-		this.gene = new Gene(parentGene);
+		this.gene = new Gene(parentGene, parentGene.species);
 		this.colour = gene.colour;
 		width = (float) gene.size;
 	}
