@@ -1,13 +1,15 @@
 import processing.core.PApplet;
 import processing.core.PVector;
 
+import java.util.ArrayList;
+
 import org.gicentre.utils.FrameTimer;
 import org.gicentre.utils.stat.XYChart;
 
 import g4p_controls.GButton;
-import g4p_controls.GCheckbox;
 import g4p_controls.GDropList;
 import g4p_controls.GEvent;
+import g4p_controls.GImageButton;
 import g4p_controls.GToggleControl;
 
 public class Main extends PApplet {
@@ -126,11 +128,11 @@ public class Main extends PApplet {
 		addDataToCharts();
 		userInterface.display();
 		// Draw Text
-		if(env.selectedSpecies != null) {
-			String numOfAnimalsString = "Number of animals: " + env.selectedSpecies.size();
-			textSize(scWidth/30);
+		if(userInterface.selectedSpecies != null) {
+			String numOfAnimalsString = "Number of " + userInterface.selectedSpecies.name +": " + userInterface.selectedSpecies.animals.size();
+			textSize(scWidth/70);
 			fill(0,0,0);
-			text(numOfAnimalsString, (float) (scWidth * 0.05), (float) (scHeight * 0.08));
+			text(numOfAnimalsString, (float) (scWidth * 0.1), (float) (scHeight * 0.15));
 		}
 		
 		// Draw framerate
@@ -186,73 +188,74 @@ public class Main extends PApplet {
 	
 	public void addDataToCharts() {
 		// Add to the chart array
-		if(secondPassedFrame && env.selectedSpecies != null) {
+		if(secondPassedFrame) {
 			for (Species species : env.speciesArray) {
+				ArrayList<Animal> animals = species.animals;
 				// FPS Chart
 				species.fpsLineChart.addData(secondCount, timer.getFrameRate());
 				fps = timer.getFrameRateAsText();
 				// Animal population
-				species.animalPopulation.addData(secondCount, env.selectedSpecies.size());
-				species.birthRate.addData(secondCount, calculateAverageBirthRateInSeconds());
-				species.sizeChart.addData(secondCount, calculateAverageSize());
-				species.speedChart.addData(secondCount, calculateAverageSpeed());
+				species.animalPopulation.addData(secondCount, animals.size());
+				species.birthRate.addData(secondCount, calculateAverageBirthRateInSeconds(animals));
+				species.sizeChart.addData(secondCount, calculateAverageSize(animals));
+				species.speedChart.addData(secondCount, calculateAverageSpeed(animals));
 				species.foodChart.addData(secondCount, env.foodArray.size());
-				species.hungerChart.addData(secondCount, calculateAverageHunger());
+				species.hungerChart.addData(secondCount, calculateAverageHunger(animals));
 			}
 		}
 	}
 	
 	
-	public float calculateAverageBirthRateInSeconds() {
-		if(env.selectedSpecies.size() == 0) {
+	public float calculateAverageBirthRateInSeconds(ArrayList<Animal> animals) {
+		if(animals.size() == 0) {
 			return 0;
 		}
 			
 		float totalLifeSpan = 0;
-		for (Animal an : env.selectedSpecies) {
+		for (Animal an : animals) {
 			totalLifeSpan += an.gene.lifeSpan;
 		}
-		float returnVal = totalLifeSpan / (env.selectedSpecies.size() * 1000);
+		float returnVal = totalLifeSpan / (animals.size() * 1000);
 		return returnVal;
 	}
 	
-	public float calculateAverageHunger() {
-		if(env.selectedSpecies.size() == 0) {
+	public float calculateAverageHunger(ArrayList<Animal> animals) {
+		if(animals.size() == 0) {
 			return 0;
 		}
 		
 		float totalHunger = 0;
-		for (Animal an : env.selectedSpecies) {
+		for (Animal an : animals) {
 			totalHunger += an.normaliseHunger();
 		}
-		float returnVal = totalHunger / env.selectedSpecies.size();
+		float returnVal = totalHunger / animals.size();
 		return 1 - returnVal;
 		
 	}
 	
-	public float calculateAverageSize() {
-		if(env.selectedSpecies.size() == 0) {
+	public float calculateAverageSize(ArrayList<Animal> animals) {
+		if(animals.size() == 0) {
 			return 0;
 		}
 		
 		float totalSize = 0;
-		for (Animal an : env.selectedSpecies) {
+		for (Animal an : animals) {
 			totalSize += an.width;
 		}
-		float returnVal = totalSize / env.selectedSpecies.size();
+		float returnVal = totalSize / animals.size();
 		return returnVal;
 	}
 	
-	public float calculateAverageSpeed() {
-		if(env.selectedSpecies.size() == 0) {
+	public float calculateAverageSpeed(ArrayList<Animal> animals) {
+		if(animals.size() == 0) {
 			return 0;
 		}
 		
 		float totalSpeed = 0;
-		for (Animal an : env.selectedSpecies) {
+		for (Animal an : animals) {
 			totalSpeed += an.gene.speed;
 		}
-		float returnVal = totalSpeed / env.selectedSpecies.size();
+		float returnVal = totalSpeed / animals.size();
 		return returnVal;
 	}
 	
@@ -269,10 +272,13 @@ public class Main extends PApplet {
 		userInterface.handleToggleControlEvents(checkBox, event);
 	}
 	
+	public void handleButtonEvents(GImageButton button, GEvent event) {
+		userInterface.handleButtonEvents(button, event);
+	}
+	
 	public void getAnimalImage() {
 		userInterface.getAnimalImage();
 	}
-	
 	
 	public void saveTableThread() {
 		userInterface.saveTableThread();

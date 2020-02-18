@@ -15,9 +15,9 @@ class hydrophile implements BehaviourWaterMovement {
 	
 	public float getWaterMovement(float movement, boolean inWater) {
 		if(inWater)
-			return movement * 1.25f;
+			return movement;
 		else
-			return movement * 0.3f;
+			return movement * 0.1f;
 	}
 }
 
@@ -32,10 +32,12 @@ class hydrophobe implements BehaviourWaterMovement {
 	
 	public float getWaterMovement(float movement, boolean inWater) {
 		if(!inWater)
-			return movement * 1.25f;
+			return movement;
 		else
-			return movement * 0.3f;
+			return movement * 0.1f;
 	}
+	
+	
 }
 
 class amphibious implements BehaviourWaterMovement {

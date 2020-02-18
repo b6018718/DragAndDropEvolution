@@ -10,6 +10,7 @@ import processing.core.PImage;
 public class Species {
 	public ArrayList<Animal> animals = new ArrayList<Animal>();
 	int speciesNumber;
+	String name;
 	// Generations
 	int generations = 1;
 	public ArrayList<Animal> absoluteUnits = new ArrayList<Animal>();
@@ -26,6 +27,7 @@ public class Species {
 	final String HUNGER = "Hunger";
 	
 	PImage animalImage;
+	public String imageFilePath;
 	
 	// Line Charts
 	ArrayList<UiLineChart> uiLineCharts = new ArrayList<UiLineChart>();
@@ -36,6 +38,7 @@ public class Species {
 	UiLineChart speedChart;
 	UiLineChart foodChart;
 	UiLineChart hungerChart;
+	GDropList dropDown;
 	UI userInterface;
 	
 	// Speed
@@ -52,7 +55,7 @@ public class Species {
 	
 	PApplet pro;
 	
-	Species(PApplet pro, Environment env, UI userInterface, int speciesNumber, PImage animalImage, BehaviourSpeed behaveSpeed, BehaviourSize behaveSize, BehaviourLifespan behaveLifespan, BehaviourWaterMovement behaveWaterMovement){
+	Species(PApplet pro, Environment env, String imageFilePath, String name, UI userInterface, int speciesNumber, PImage animalImage, BehaviourSpeed behaveSpeed, BehaviourSize behaveSize, BehaviourLifespan behaveLifespan, BehaviourWaterMovement behaveWaterMovement){
 		this.speciesNumber = speciesNumber;
 		this.animalImage = animalImage;
 		this.userInterface = userInterface;
@@ -61,6 +64,8 @@ public class Species {
 		this.behaveSize = behaveSize;
 		this.behaveLifespan = behaveLifespan;
 		this.behaveWaterMovement = behaveWaterMovement;
+		this.imageFilePath = imageFilePath;
+		this.name = name;
 		
 		// Create population line chart
 		float chartXAn = (float) (pro.width * 0.81);
@@ -101,11 +106,8 @@ public class Species {
 	}
 	
 	public void selectSpecies() {
-		String [] items;
-		userInterface.graphSelect = new GDropList(pro, pro.width * 0.85f, pro.height * 0.6f, pro.width * 0.1f, pro.height * 0.25f, 4);
-		items = new String [] {POPULATION, LIFESPAN, SIZE, SPEED, FRAMERATE, FOOD, HUNGER};
-		userInterface.graphSelect.setItems(items, 0);
-		userInterface.graphSelect.tag = "graphSelect";
+		userInterface.selectedSpecies = this;
+		handleDropListEvents(userInterface.graphSelect, null);
 	}
 	
 	public void handleDropListEvents(GDropList list, GEvent event) {

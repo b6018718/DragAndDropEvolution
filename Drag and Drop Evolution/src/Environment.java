@@ -49,7 +49,6 @@ public class Environment {
 	//ArrayList<Animal> topTenAnimals = new ArrayList<Animal>();
 	ArrayList<RectObj> sea = new ArrayList<RectObj>();
 	ArrayList<Species> speciesArray = new ArrayList<Species>();
-	ArrayList<Animal> selectedSpecies = null;
 	int speciesCount = 0;
 	ImageManager imageManager;
 	
@@ -84,10 +83,13 @@ public class Environment {
 		walls.add(new Wall(env.x, env.y, env.x, env.topY, false));
 	}
 	
-	public void createSpecies(PImage animalImage, BehaviourSpeed behaveSpeed, BehaviourSize behaveSize, BehaviourLifespan behaveLifespan, BehaviourWaterMovement behaveWaterMovement) {
-		speciesArray.add(new Species(this.pro, this, userInterface, speciesCount, animalImage, behaveSpeed, behaveSize, behaveLifespan, behaveWaterMovement));
+	public void createSpecies(PImage animalImage, String filePath, String name, BehaviourSpeed behaveSpeed, BehaviourSize behaveSize, BehaviourLifespan behaveLifespan, BehaviourWaterMovement behaveWaterMovement) {
+		Species newSpecies = new Species(this.pro, this, filePath, name, userInterface, speciesCount, animalImage, behaveSpeed, behaveSize, behaveLifespan, behaveWaterMovement);
+		speciesArray.add(newSpecies);
 		speciesCount = speciesCount + 1;
 		createAnimals(speciesArray.get(speciesArray.size() -1));
+		userInterface.addAnimalIcon(newSpecies);
+		newSpecies.selectSpecies();
 	}
 	
 	private void createAnimals(Species species) {
@@ -114,7 +116,7 @@ public class Environment {
 		}*/
 		
 		species.animals.clear();
-		
+		species.generations++;
 		//foodArray.clear();
 		//eggArray.clear();
 		//foodCounter = 2000;
@@ -371,14 +373,6 @@ public class Environment {
 			RectObj seaSquare = sea.get(i);
 			pro.fill(10, 0, 175);
 			pro.rect(seaSquare.x, seaSquare.y, seaSquare.width, seaSquare.height);
-		}
-	}
-	
-	public void getSelectedSpecies() {
-		for (int i = 0; i < speciesArray.size(); i++) {
-			if(speciesArray.get(i).animalSelected) {
-				selectedSpecies = speciesArray.get(i).animals;
-			}
 		}
 	}
 }

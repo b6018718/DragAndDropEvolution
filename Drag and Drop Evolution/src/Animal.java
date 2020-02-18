@@ -439,9 +439,10 @@ public class Animal extends EnvironmentObject {
 		float elderlySpeed = movementSpeed;
 		float hungerSpeed = movementSpeed;
 		
-		lifeSpanInMs = lifeSpanInMs - lastLoopTime;
-		
 		float waterLastLoop = gene.species.behaveWaterMovement.getHunger(lastLoopTime, insideWater);
+		
+		lifeSpanInMs = lifeSpanInMs - waterLastLoop;
+		
 		
 		if(restMode) {
 			timeTillStarve = timeTillStarve - waterLastLoop * 0.5f;

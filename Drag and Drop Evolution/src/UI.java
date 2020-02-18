@@ -32,6 +32,9 @@ public class UI {
 	
 	// Image button
 	GImageButton animalPanelImage;
+	ArrayList<AnimalIcon> animalIconArray = new ArrayList<AnimalIcon>();
+	
+	String animalFilePath;
 	
 	boolean animalPanel = false;
 	
@@ -100,6 +103,14 @@ public class UI {
 	GLabel speedLabel;
 	GLabel waterLabel;
 	
+	final String POPULATION = "Population";
+	final String LIFESPAN = "Lifespan";
+	final String SIZE = "Size";
+	final String SPEED = "Speed";
+	final String FRAMERATE = "Framerate";
+	final String FOOD = "Food";
+	final String HUNGER = "Hunger";
+	
 	Species selectedSpecies = null;
 	
 	ArrayList<GAbstractControl> panelControls = new ArrayList<GAbstractControl>();
@@ -110,13 +121,11 @@ public class UI {
 		this.uiOffset = uiOffset;
 		this.imageManager = imageManager;
 		
-		/*
 		String [] items;
 		graphSelect = new GDropList(pro, pro.width * 0.85f, pro.height * 0.6f, pro.width * 0.1f, pro.height * 0.25f, 4);
 		items = new String [] {POPULATION, LIFESPAN, SIZE, SPEED, FRAMERATE, FOOD, HUNGER};
 		graphSelect.setItems(items, 0);
 		graphSelect.tag = "graphSelect";
-		*/
 		
 		//Set up zoomer 
 		zoomer = new ZoomPan(pro);  // Initialise the zoomer
@@ -161,23 +170,38 @@ public class UI {
 	}
 	
 	public void handleButtonEvents(GButton button, GEvent event) {
-		  if (button == saveAsCsvBtn && event == GEvent.CLICKED) {
+		if (event == GEvent.CLICKED) {
+		  if (button == saveAsCsvBtn) {
 			  // Save the table in a different thread
 			  pro.thread("saveTableThread");
-		  } else if(button == addAnimal && event == GEvent.CLICKED && !animalPanel) {
+		  } else if(button == addAnimal && !animalPanel) {
 			  // *** Spawn animal panel ***
 			  openAnimalPanel();
-		  } else if(button == addAnimal && event == GEvent.CLICKED && animalPanel) {
+		  } else if(button == addAnimal && animalPanel) {
 			  closeAnimalPanel();
-		  } else if(button == exitButton && event == GEvent.CLICKED && animalPanel) {
+		  } else if(button == exitButton && animalPanel) {
 			  closeAnimalPanel();
-		  } else if(button == getAnimalImage && event == GEvent.CLICKED && animalPanel) {
+		  } else if(button == getAnimalImage && animalPanel) {
 			  env.paused = true;
 			  getAnimalImage();
-		  } else if(button == createSpecies && event == GEvent.CLICKED && animalPanel) {
-			  env.createSpecies(env.imageManager.animalImages.get(env.imageManager.animalImages.size() -1), getSpeed(), getSize(), getLifespan(), getWaterMove());
+		  } else if(button == createSpecies && animalPanel) {
+			  env.createSpecies(env.imageManager.animalImages.get(env.imageManager.animalImages.size() -1), animalFilePath, getName(),  getSpeed(), getSize(), getLifespan(), getWaterMove());
 			  closeAnimalPanel();
 		  }
+		}
+	}
+	
+	public void handleButtonEvents(GImageButton button, GEvent event) {
+		  // Check animal icon buttons
+		  for (AnimalIcon animalIcon : animalIconArray) {
+			if(animalIcon.imageButton == button && animalIcon.species != selectedSpecies) {
+				animalIcon.species.selectSpecies();
+			}
+		  }
+	}
+	
+	private String getName() {
+		return animalNameTextField.getText();
 	}
 	
 	private BehaviourSpeed getSpeed() {
@@ -336,7 +360,7 @@ public class UI {
 		String animalLocation = pro.sketchPath() + "\\src\\data\\Animals";
 		String filePath = G4P.selectInput("Select an image file", "png, jpeg", "Image Files", animalLocation);
 		PImage image = imageManager.addAnimalImage(filePath);
-	
+		animalFilePath = filePath;
 		// Set animal image
 		try {
 			if(image != null) {
@@ -421,6 +445,7 @@ public class UI {
 		showAnimalViewPort();
 		showAnimalNetwork();
 		
+		
 		// Show charts
 		if(selectedSpecies != null)
 			selectedSpecies.showCharts();
@@ -433,8 +458,8 @@ public class UI {
 		// Show generations
 		pro.fill(0,0,0);
 		
-		if(env.speciesArray.size() > 0 )
-			pro.text("Generations " + env.speciesArray.get(0).generations, pro.width * 0.85f, pro.height * 0.15f);
+		if(env.speciesArray.size() > 0 && selectedSpecies != null)
+			pro.text("Generations " + selectedSpecies.generations, pro.width * 0.85f, pro.height * 0.15f);
 	}
 	
 	private void showAnimalNetwork() {
@@ -676,4 +701,13 @@ public class UI {
 		seaStarted = false;
 	}
 	
+	public void addAnimalIcon(Species species) {
+		int size = animalIconArray.size();
+		float startX = pro.width * 0.01f;
+		float startY = pro.height * 0.03f;
+		float jumpSizeX = pro.width * 0.04f;
+		float height = pro.height * 0.04f;
+		float width = height;
+		animalIconArray.add(new AnimalIcon(pro, species, startX + jumpSizeX * size, startY, height, width));
+	}
 }
