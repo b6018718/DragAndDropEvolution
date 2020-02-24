@@ -47,11 +47,15 @@ public class Animal extends EnvironmentObject {
 	Gene gene;
 	double[] nArgs;
 	double[] weighOptions;
+	ArrayList <Egg> eggArray;
 	
 	// This processor object allows us to access Processor methods outside of the main class
 	//PApplet pro;
 	
-	Animal(PApplet parent, ArrayList <Species> species, ArrayList <Food> foodArray, Environment env, HashGrid<EnvironmentObject> hashGrid, ImageManager imageManager, Gene gene, PVector eggPos){
+	Animal(PApplet parent, ArrayList <Species> species, ArrayList <Food> foodArray,
+			Environment env, HashGrid<EnvironmentObject> hashGrid,
+			ImageManager imageManager, Gene gene, PVector eggPos,
+			ArrayList <Egg> eggArray){
 		// Add the processing applet into the class
 		super(parent, env, species, foodArray, hashGrid, imageManager);
 		this.gene = gene;
@@ -59,6 +63,7 @@ public class Animal extends EnvironmentObject {
 		this.startingLifeSpan = (float) gene.lifeSpan;
 		this.lifeSpanInMs = startingLifeSpan;
 		this.distanceToWall = this.width;
+		this.eggArray = eggArray;
 		
 		
 		// Set the attributes
@@ -108,16 +113,17 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	float calculateBirthRate() {
-		return (startingLifeSpan) /3;
+		return (startingLifeSpan) /4;
 	}
 	
 	float calculateStarveTime() {
 		// y = x/12 and y = x/50, graphs for the starve time
-		float smallBonus = 12000 - 1000 * this.width;
+		float smallBonus = 12000 - 1000 * (this.width / 2);
 		float slowBonus = 50000 - 1000 * this.movementSpeed;
-		float lifeSpanBonus = (float) ((60000 - gene.lifeSpan)/10); 
+		//float lifeSpanBonus = (float) ((60000 - gene.lifeSpan)/10); 
 		//float lifeSpanMultiplier = (float) (gene.lifeSpan/60000);
-		return 15000 + smallBonus + slowBonus + lifeSpanBonus;
+		float lifeSpanBonus = (float) (gene.lifeSpan / 1000 * 67);
+		return 13000 + smallBonus + slowBonus + lifeSpanBonus;
 	}
 	
 	float getPixelsFromPercentWidth(float percentOfScreenWidth) {
@@ -130,10 +136,10 @@ public class Animal extends EnvironmentObject {
 		if(!moveForward) {
 			if(restMode)
 				// Resting
-				deltaTime = deltaTime * 0.2f;
+				deltaTime = deltaTime * 0.1f;
 			else
 				// Turning
-				deltaTime = deltaTime * 0.45f;
+				deltaTime = deltaTime * 0.65f;
 		}
 		
 		// Calculate water movement
@@ -141,8 +147,7 @@ public class Animal extends EnvironmentObject {
 			
 		PVector aimVector = getAimVector(deltaTime);
 		if(collide(aimVector, deltaTime)) {
-			notEnoughSpace(deltaTime);
-			//adjustAngle();
+			//notEnoughSpace(deltaTime);
 		} else {
 			setAimVectorAsLocation(aimVector);
 		}
@@ -179,8 +184,8 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	boolean hasFoodInBelly() {
-		// Must have at least 30% food or the egg counter will restart
-		return (timeTillStarve / startingTimeTillStarve > 0.50f);
+		// Must have at least % food or the egg counter will restart
+		return (timeTillStarve / startingTimeTillStarve > 0.25f);
 	}
 	
 	private PVector getAimVector(float deltaTime) {		
@@ -214,29 +219,36 @@ public class Animal extends EnvironmentObject {
 	
 	public boolean adjustAngle(float deltaTime) {
 		float[] nearestFood = getNearFoodAngle();
+		//System.out.println(nearestFood[0]);
 		// Food angle
 		double arg1 = normaliseRadians(nearestFood[0]);
 		// Food distance
 		double arg2 = normaliseSight(nearestFood[1]);
+		// Current angle
+		//double arg3 = this.direction / 360;
 		
 		float nearestAnimal = getNearAnimalAngle();
 		// Animal angle
-		double arg3 = normaliseRadians(nearestAnimal);
-		// Current angle
-		double arg4 = this.direction / 360;
+		double arg4 = normaliseRadians(nearestAnimal);
 		// Distance to closest wall
-		double arg5 = (double) (normaliseY((float) this.distanceToWall));
+		double arg5 = (double) (normaliseX((float) this.distanceToWall));
+		//System.out.println(arg5);
+		//double arg6 = normaliseHunger();
 		
-		double arg6 = normaliseHunger();
-		
-		double arg7 = normaliseEggTime();
+		//double arg7 = normaliseEggTime();
 		
 		double arg8 = 0;
 		if(insideWater) {
 			arg8 = 1;
 		}
 		
-		nArgs = new double[]{ arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 };
+		/*double arg9;
+		if(this.restMode)
+			arg9 = 1;
+		else
+			arg9 = 0;*/
+		
+		nArgs = new double[]{ arg1, arg2, arg4, arg5, arg8 };
 		weighOptions = gene.neuralNetwork.guess(nArgs);
 		int selection = getIndexOfMax(weighOptions);
 		
@@ -245,13 +257,15 @@ public class Animal extends EnvironmentObject {
 		//System.out.println(nArgs[2]);
 		//System.out.println(nArgs[3]);
 		
-		restMode = false;
+		/*restMode = false;
 		if(weighOptions[3] > 0.7) {
 			// Enter rest mode
 			restMode = true;
-		}
+		}*/
 		//System.out.println(weighOptions[3]);
 		// Find out which direction to move
+		turning = false;
+		restMode = false;
 		if(selection == 0) {
 			direction = direction - 60 * deltaTime;
 			fixDirection();
@@ -264,12 +278,23 @@ public class Animal extends EnvironmentObject {
 			fixDirection();
 			turning = true;
 			return false;
+		} else if(selection == 2) {
+			direction = direction - 10 * deltaTime;
+			fixDirection();
+			restMode = true;
+			turning = true;
+			return false;
+		} else if(selection == 3) {
+			direction = direction + 10 * deltaTime;
+			fixDirection();
+			restMode = true;
+			turning = true;
+			return false;
 		}
 		//System.out.println("FORWARD");
 		// else if(selection == 2) {
 			//Do Nothing
 		//}
-		turning = false;
 		return true;
 		
 		//direction = (int) (guess[0] * 360);
@@ -309,7 +334,7 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	private double normaliseSight(float x) {
-		return (double) (x / (env.maxObjectSize * 3 + 1));
+		return (double) (x / (env.sightDistance));
 	}
 	
 	private double normaliseY(float y) {
@@ -401,10 +426,14 @@ public class Animal extends EnvironmentObject {
 				float angle = getAngle(this.position, closestFood.position);
 				if(env.showLines)
 					pro.line(this.position.x, this.position.y, closestFood.position.x, closestFood.position.y);
+				angle = angle - PApplet.radians(this.direction + 180);
+				if(angle < 0)
+					angle = angle * -1;
+				angle = angle * 2;
 				return new float[] {angle, (float) closestDistance};
 			}
 		}
-		return new float[] {0, this.env.maxObjectSize * 3 + 1};
+		return new float[] {PApplet.radians(180), env.sightDistance};
 	}
 	
 	private float getNearAnimalAngle() {
@@ -413,14 +442,19 @@ public class Animal extends EnvironmentObject {
 			for (EnvironmentObject obj : objectsInRange) {
 				if(obj instanceof Animal) {
 					Animal an = (Animal) obj;
-					float angle = getAngle(this.position, an.position);
-					if(env.showLines)
-						pro.line(position.x, position.y, an.position.x, an.position.y);
-					return angle;
+					if(an.gene.species.speciesNumber != this.gene.species.speciesNumber) {
+						float angle = getAngle(this.position, an.position);
+						if(env.showLines)
+							pro.line(position.x, position.y, an.position.x, an.position.y);
+						angle = angle - PApplet.radians(this.direction + 180);
+						if(angle < 0)
+							angle = angle * -1;
+						return angle;
+					}
 				}
 			}
 		}
-		return 0;
+		return PApplet.radians(180);
 	}
 	
 	float getAngle(PVector a, PVector b){
@@ -443,11 +477,11 @@ public class Animal extends EnvironmentObject {
 		
 		lifeSpanInMs = lifeSpanInMs - waterLastLoop;
 		
-		
-		if(restMode) {
-			timeTillStarve = timeTillStarve - waterLastLoop * 0.5f;
+		float hungerRate = gene.species.behaveFood.hungerRate();
+		if(restMode || turning) {
+			timeTillStarve = timeTillStarve - waterLastLoop * 1.1f * hungerRate;
 		} else {
-			timeTillStarve = timeTillStarve - waterLastLoop;
+			timeTillStarve = timeTillStarve - waterLastLoop * hungerRate;
 		}
 		
 		float lifeRemaining = lifeSpanInMs / startingLifeSpan;
@@ -552,7 +586,8 @@ public class Animal extends EnvironmentObject {
 				Animal animal = (Animal)obj;				
 				if(animal.id != id) {
 					if(collisionAABB(animal, collidePos)) {
-						return true;
+						eat(animal, hashGrid);
+						return false;
 					}
 				}
 			} else if(obj instanceof Food) {
@@ -561,22 +596,75 @@ public class Animal extends EnvironmentObject {
 				if(collisionAABB(food, collidePos)) {
 					eat(food, hashGrid);
 				}
+			} else if(obj instanceof Egg) {
+				Egg egg = (Egg) obj;
+				if(collisionAABB(egg, collidePos)) {
+					eat(egg, hashGrid);
+				}
 			}
 		}
 		return false;
 	}
 	
 	public void eat(Food food, HashGrid<EnvironmentObject> hashGrid) {
-		timeTillStarve += food.width * 4000;
-		eatenOnce = true;
-		if(timeTillStarve > startingTimeTillStarve) {
-			timeTillStarve = startingTimeTillStarve;
-			movementSpeed = (float) gene.speed;
+		if(gene.species.behaveFood.doesEatPlants()) {
+			timeTillStarve += food.width * 4000;
+			eatenOnce = true;
+			if(timeTillStarve > startingTimeTillStarve) {
+				timeTillStarve = startingTimeTillStarve;
+				movementSpeed = (float) gene.speed;
+			}
+			foodArray.remove(food);
+			if(hashGrid != null) {
+				hashGrid.remove(food);
+			}
 		}
-		foodArray.remove(food);
-		if(hashGrid != null) {
-			hashGrid.remove(food);
+	}
+	
+	public void eat(Egg egg, HashGrid<EnvironmentObject> hashGrid) {
+		if(this.gene.species.speciesNumber != egg.gene.species.speciesNumber && this.gene.species.behaveFood.doesEatMeat()) {
+			this.timeTillStarve += egg.width * 20000;
+			this.eatenOnce = true;
+			if(this.timeTillStarve > this.startingTimeTillStarve) {
+				this.timeTillStarve = this.startingTimeTillStarve;
+				this.movementSpeed = (float) this.gene.speed;
+			}
+			eggArray.remove(egg);
+			if(hashGrid != null) {
+				hashGrid.remove(egg);
+			}
 		}
+	}
+	
+	public boolean eat(Animal animal, HashGrid<EnvironmentObject> hashGrid) {
+		Animal prey = animal;
+		Animal predator = this;
+		
+		if(animal.gene.species.behaveFood.doesEatMeat() &&
+		  (animal.width > this.width || !(this.gene.species.behaveFood.doesEatMeat()))) {
+				prey = this;
+				predator = animal;
+		}
+		
+		BehaviourFood preyType = prey.gene.species.behaveFood;
+		BehaviourFood predatorType = predator.gene.species.behaveFood;
+		
+		if(predatorType.doesEatMeat() && prey.gene.species.speciesNumber != predator.gene.species.speciesNumber) {
+			if(preyType instanceof herbivorous || preyType instanceof omnivorous) {
+				predator.timeTillStarve += prey.width * 20000;
+				predator.eatenOnce = true;
+				if(predator.timeTillStarve > predator.startingTimeTillStarve) {
+					predator.timeTillStarve = predator.startingTimeTillStarve;
+					predator.movementSpeed = (float) predator.gene.speed;
+				}
+				prey.gene.species.animals.remove(prey);
+				if(hashGrid != null) {
+					hashGrid.remove(prey);
+				}
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	private void isOutOfBounds() {

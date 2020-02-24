@@ -53,9 +53,15 @@ public class Species {
 	// Water movement
 	public BehaviourWaterMovement behaveWaterMovement;
 	
+	// Food
+	public BehaviourFood behaveFood;
+	
 	PApplet pro;
 	
-	Species(PApplet pro, Environment env, String imageFilePath, String name, UI userInterface, int speciesNumber, PImage animalImage, BehaviourSpeed behaveSpeed, BehaviourSize behaveSize, BehaviourLifespan behaveLifespan, BehaviourWaterMovement behaveWaterMovement){
+	Species(PApplet pro, Environment env, String imageFilePath, String name, UI userInterface,
+			int speciesNumber, PImage animalImage, BehaviourSpeed behaveSpeed,
+			BehaviourSize behaveSize, BehaviourLifespan behaveLifespan, BehaviourWaterMovement behaveWaterMovement,
+			BehaviourFood behaveFood){
 		this.speciesNumber = speciesNumber;
 		this.animalImage = animalImage;
 		this.userInterface = userInterface;
@@ -66,6 +72,7 @@ public class Species {
 		this.behaveWaterMovement = behaveWaterMovement;
 		this.imageFilePath = imageFilePath;
 		this.name = name;
+		this.behaveFood = behaveFood;
 		
 		// Create population line chart
 		float chartXAn = (float) (pro.width * 0.81);

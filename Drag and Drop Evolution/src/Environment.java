@@ -16,10 +16,10 @@ public class Environment {
 	// Max size of animals
 	float maxObjectSize = 24f;
 	// Amount of food
-	int foodPerEvent = 5;
+	int foodPerEvent = 2;
 	// Ms per food event
 	float msPerFoodEvent = 2000;
-	int initialFood = 250;
+	int initialFood = 20;
 	float originalFoodPerEvent = msPerFoodEvent;
 	// Counter to track time till next food spawn
 	int foodCounter = 2000;
@@ -53,6 +53,7 @@ public class Environment {
 	ImageManager imageManager;
 	
 	float tempSpeedMultipler;
+	float sightDistance;
 	
 	Environment(PApplet processing, RectObj env, ImageManager imageManager){
 		pro = processing;
@@ -61,10 +62,11 @@ public class Environment {
 		
 		// Get the max proper max size
 		maxObjectSize = calculateObjectSize();
+		sightDistance = maxObjectSize * 9 + 1;
 		
 		// Create a hash grid
 		if(useHashGrid) {
-			hashGrid = new HashGrid<EnvironmentObject>(env.topX, env.topY, maxObjectSize * 3 + 1);
+			hashGrid = new HashGrid<EnvironmentObject>(env.topX, env.topY, sightDistance);
 		}
 		
 		setupWalls();
@@ -83,8 +85,11 @@ public class Environment {
 		walls.add(new Wall(env.x, env.y, env.x, env.topY, false));
 	}
 	
-	public void createSpecies(PImage animalImage, String filePath, String name, BehaviourSpeed behaveSpeed, BehaviourSize behaveSize, BehaviourLifespan behaveLifespan, BehaviourWaterMovement behaveWaterMovement) {
-		Species newSpecies = new Species(this.pro, this, filePath, name, userInterface, speciesCount, animalImage, behaveSpeed, behaveSize, behaveLifespan, behaveWaterMovement);
+	public void createSpecies(PImage animalImage, String filePath, String name,
+			BehaviourSpeed behaveSpeed, BehaviourSize behaveSize, BehaviourLifespan behaveLifespan,
+			BehaviourWaterMovement behaveWaterMovement, BehaviourFood behaveFood) {
+		Species newSpecies = new Species(this.pro, this, filePath, name, userInterface, speciesCount,
+				animalImage, behaveSpeed, behaveSize, behaveLifespan, behaveWaterMovement, behaveFood);
 		speciesArray.add(newSpecies);
 		speciesCount = speciesCount + 1;
 		createAnimals(speciesArray.get(speciesArray.size() -1));
@@ -106,28 +111,13 @@ public class Environment {
 	
 	public void reset(Species species) {
 		if(useHashGrid) {
-				hashGrid.removeAll(species.animals);
-			//hashGrid.removeAll(foodArray);
+			hashGrid.removeAll(species.animals);
 		}
-		
-		/*for (int i = 0; i < speciesArray.size(); i++) {
-			speciesArray.get(i).animals.clear();
-			speciesArray.get(i).generations++;
-		}*/
 		
 		species.animals.clear();
 		species.generations++;
-		//foodArray.clear();
-		//eggArray.clear();
-		//foodCounter = 2000;
-		
-		species.clearCharts();
-		//for (Species species : speciesArray) {
+
 		createAnimals(species);
-		//}
-		
-		//createInitialFood();
-		//setMachineLearning(userInterface.learnCheckBox.isSelected());
 	}
 	
 	void createInitialFood() {
@@ -155,13 +145,15 @@ public class Environment {
 		//Save the best animal for next generation
 		for(int i = 0; i < speciesArray.size(); i++) {
 			ArrayList<Animal> animals = speciesArray.get(i).animals;
-			ArrayList<Animal> topTenAnimals = speciesArray.get(i).absoluteUnits;
-			if (animals.size() < 5 && topTenAnimals.isEmpty()) {
-				topTenAnimals.addAll(animals);
-			} else if (animals.size() == 0) {
+			if (animals.size() == 0) {
 				reset(speciesArray.get(i));
-			} else if(animals.size() > 6 && !topTenAnimals.isEmpty()) {
-				topTenAnimals.clear();
+			} else {
+				ArrayList<Animal> topTenAnimals = speciesArray.get(i).absoluteUnits;
+				if (animals.size() < 4 && topTenAnimals.isEmpty()) {
+					topTenAnimals.addAll(animals);
+				} else if(animals.size() > 4 && !topTenAnimals.isEmpty()) {
+					topTenAnimals.clear();
+				}
 			}
 		}
 		
@@ -257,13 +249,12 @@ public class Environment {
 			if(species == speciesArray.get(i)) {
 				// Create new animal
 				ArrayList<Animal> animals = speciesArray.get(i).animals;
-				animals.add(new Animal(pro, speciesArray, foodArray, this, hashGrid, imageManager, gene, eggPos));
+				animals.add(new Animal(pro, speciesArray, foodArray, this, hashGrid, imageManager, gene, eggPos, eggArray));
 				if(useHashGrid) {
 					hashGrid.add(animals.get(animals.size() -1));
 				}
 			}
 		}
-		
 	}
 	
 	void clickOnEnv(PVector mouseZoomed, PVector mouseUnzoomed) {

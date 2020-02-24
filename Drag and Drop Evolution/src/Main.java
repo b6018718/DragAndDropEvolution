@@ -13,7 +13,7 @@ import g4p_controls.GImageButton;
 import g4p_controls.GToggleControl;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 1.8";
+	String versionNumber = "Alpha 1.9";
 	
 	// Screen dimensions
 	int scWidth;

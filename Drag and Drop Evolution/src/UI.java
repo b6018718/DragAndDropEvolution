@@ -92,16 +92,22 @@ public class UI {
 	GOption behaviourWaterLovesWater;
 	GOption behaviourWaterHatesWater;
 	
+	GOption behaviourFoodHerbivore;
+	GOption behaviourFoodCarnivore;
+	GOption behaviourFoodOmnivore;
+	
 	GToggleGroup lifespanGroup;
 	GToggleGroup sizeGroup;
 	GToggleGroup speedGroup;
 	GToggleGroup waterGroup;
+	GToggleGroup foodGroup;
 	
 	// Radio label
 	GLabel lifespanLabel;
 	GLabel sizeLabel;
 	GLabel speedLabel;
 	GLabel waterLabel;
+	GLabel eatLabel;
 	
 	final String POPULATION = "Population";
 	final String LIFESPAN = "Lifespan";
@@ -185,7 +191,9 @@ public class UI {
 			  env.paused = true;
 			  getAnimalImage();
 		  } else if(button == createSpecies && animalPanel) {
-			  env.createSpecies(env.imageManager.animalImages.get(env.imageManager.animalImages.size() -1), animalFilePath, getName(),  getSpeed(), getSize(), getLifespan(), getWaterMove());
+			  env.createSpecies(
+					  env.imageManager.animalImages.get(env.imageManager.animalImages.size() -1),
+					  animalFilePath, getName(),  getSpeed(), getSize(), getLifespan(), getWaterMove(), getFood());
 			  closeAnimalPanel();
 		  }
 		}
@@ -241,6 +249,16 @@ public class UI {
 			return new hydrophobe();
 		} else {
 			return new hydrophile();
+		}
+	}
+	
+	private BehaviourFood getFood() {
+		if(behaviourFoodHerbivore.isSelected()) {
+			return new herbivorous();
+		} else if(behaviourFoodOmnivore.isSelected()) {
+			return new omnivorous();
+		} else {
+			return new carnivorous();
 		}
 	}
 	
@@ -332,7 +350,7 @@ public class UI {
 		waterLabel = new GLabel(pro, startX, startY, radioWidth, radioHeight, "Swimming");
 		panelControls.add(waterLabel);
 
-		behaviourWaterAmphibious = new GOption(pro, startX, startY + radioHeight, radioWidth, radioHeight, "Evole freely");
+		behaviourWaterAmphibious = new GOption(pro, startX, startY + radioHeight, radioWidth, radioHeight, "Evolve freely");
 		behaviourWaterHatesWater = new GOption(pro, startX, startY + radioHeight * 2, radioWidth, radioHeight, "Land creature");
 		behaviourWaterLovesWater = new GOption(pro, startX, startY + radioHeight * 3, radioWidth, radioHeight, "Sea creature");
 		
@@ -343,6 +361,23 @@ public class UI {
 		waterGroup = new GToggleGroup();
 		waterGroup.addControls(behaviourWaterAmphibious, behaviourWaterHatesWater, behaviourWaterLovesWater);
 		behaviourWaterAmphibious.setSelected(true);
+		
+		// Water
+		startX = startX + distanceBetweenRadios;
+		eatLabel = new GLabel(pro, startX, startY, radioWidth, radioHeight, "Eating");
+		panelControls.add(eatLabel);
+
+		behaviourFoodHerbivore = new GOption(pro, startX, startY + radioHeight, radioWidth, radioHeight, "Herbivore");
+		behaviourFoodCarnivore = new GOption(pro, startX, startY + radioHeight * 2, radioWidth, radioHeight, "Carnivore");
+		behaviourFoodOmnivore = new GOption(pro, startX, startY + radioHeight * 3, radioWidth, radioHeight, "Omnivore");
+		
+		panelControls.add(behaviourFoodHerbivore);
+		panelControls.add(behaviourFoodCarnivore);
+		panelControls.add(behaviourFoodOmnivore);
+		
+		foodGroup = new GToggleGroup();
+		foodGroup.addControls(behaviourFoodHerbivore, behaviourFoodCarnivore, behaviourFoodOmnivore);
+		behaviourFoodHerbivore.setSelected(true);
 		
 		// Add animal to environment button
 		createSpecies = new GButton(pro, pro.width * 0.28f, pro.height * 0.53f, buttonWidth, buttonHeight, "Create Animal");
@@ -369,7 +404,6 @@ public class UI {
 			}
 			filePath = filePath.substring(filePath.lastIndexOf('\\')+1);
 			filePath = filePath.replaceAll("\\.[^.]*$", "");
-			System.out.println(filePath);
 			animalNameTextField.setText(filePath);
 		} catch (Exception e) {
 			System.out.println("Operations cancelled");

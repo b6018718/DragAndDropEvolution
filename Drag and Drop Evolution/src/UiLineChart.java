@@ -68,7 +68,6 @@ public class UiLineChart {
 
 				graph.draw(sizeRect.x, sizeRect.y,
 						sizeRect.width, sizeRect.height);
-				System.out.println(graph.getLeftSpacing());
 		}
 	}	
 	

@@ -17,7 +17,7 @@ public class Gene {
 	public Species species;
 	
 	public void generateRandomNetwork() {
-		neuralNetwork =  new NeuralNetwork(8, 2, 7, 4);
+		neuralNetwork =  new NeuralNetwork(5, 2, 7, 5);
 	}
 	
 	Gene(Gene parent, Species species){
@@ -45,7 +45,6 @@ public class Gene {
 			colour = null;
 			generateRandomNetwork();
 			neuralNetwork.setActivationFunction(ActivationFunction.RELU);
-			//neuralNetwork.setLearningRate(2);
 		} else {
 			
 			mutate = parent.mutate;
@@ -75,6 +74,8 @@ public class Gene {
 		
 		if(size > 24) {
 			size = 24;
+		} else if(size < 5) {
+			size = 5;
 		}
 		
 		speed = species.behaveSpeed.getSpeed(speed);
