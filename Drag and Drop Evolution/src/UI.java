@@ -96,11 +96,16 @@ public class UI {
 	GOption behaviourFoodCarnivore;
 	GOption behaviourFoodOmnivore;
 	
+	GOption behaviourNormalMutation;
+	GOption behaviourHighMutation;
+	GOption behaviourLowMutation;
+	
 	GToggleGroup lifespanGroup;
 	GToggleGroup sizeGroup;
 	GToggleGroup speedGroup;
 	GToggleGroup waterGroup;
 	GToggleGroup foodGroup;
+	GToggleGroup mutationGroup;
 	
 	// Radio label
 	GLabel lifespanLabel;
@@ -108,6 +113,7 @@ public class UI {
 	GLabel speedLabel;
 	GLabel waterLabel;
 	GLabel eatLabel;
+	GLabel mutateLabel;
 	
 	final String POPULATION = "Population";
 	final String LIFESPAN = "Lifespan";
@@ -121,11 +127,34 @@ public class UI {
 	
 	ArrayList<GAbstractControl> panelControls = new ArrayList<GAbstractControl>();
 	
+	float iconStartX;
+	float iconStartY;
+	float iconJumpSizeX;
+	float iconHeight;
+	float iconWidth;
+	
+	GImageToggleButton showLinesOfSightButton;
+	GImageToggleButton showLinesButton;
+	GImageToggleButton showWaterButton;
+	GImageToggleButton showZoomButton;
+	
 	UI(PApplet pro, Environment env, double uiOffset, ImageManager imageManager){
 		this.pro = pro;
 		this.env = env;
 		this.uiOffset = uiOffset;
 		this.imageManager = imageManager;
+		
+		iconStartX = pro.width * 0.01f;
+		iconStartY = pro.height * 0.03f;
+		iconJumpSizeX = pro.width * 0.04f;
+		iconHeight = pro.height * 0.04f;
+		iconWidth = iconHeight;
+		
+		// Toggle button
+		showLinesButton = new GImageToggleButton(pro, pro.width * 0.71f, pro.height * 0.02f, "data/Button_lines.png", 2, 1);
+		showWaterButton = new GImageToggleButton(pro, pro.width * 0.71f, pro.height * 0.08f, "data/Button_water.png", 2, 1);
+		showLinesOfSightButton = new GImageToggleButton(pro, pro.width * 0.71f, pro.height * 0.14f, "data/Button_line_of_sight.png", 2, 1);
+		showZoomButton = new GImageToggleButton(pro, pro.width * 0.81f, pro.height * 0.6f, "data/Button_zoom.png", 2, 1);
 		
 		String [] items;
 		graphSelect = new GDropList(pro, pro.width * 0.85f, pro.height * 0.6f, pro.width * 0.1f, pro.height * 0.25f, 4);
@@ -138,8 +167,8 @@ public class UI {
 		zoomer.setMinZoomScale(1);
 		//zoomer.setMaxZoomScale(maxZoom);
 		zoomer.allowZoomButton(false);
-		zoomer.setZoomMouseButton(PConstants.RIGHT);
-		zoomer.setMaxZoomScale(1);
+		//zoomer.setZoomMouseButton(PConstants.RIGHT);
+		zoomer.setMaxZoomScale(3);
 		zoomer.setMouseMask(PConstants.SHIFT);
 		
 		// Speed Up Button
@@ -152,11 +181,12 @@ public class UI {
 		
 		uiElements.add(speedUpUi);
 		
-		
 		RectObj speedDownPos = new RectObj(pro.width * 0.3f, pro.height * 0.1f, pro.width * 0.05f, pro.height * 0.05f);
 		UiElement speedDownUi = new UiSpeedUpButton(speedDownPos, true, uiElements, env, 0);
-		speedDownUi.spriteArray.add(getReversePImage(load1));
-		speedDownUi.spriteArray.add(getReversePImage(load2));
+		PImage load3 = pro.loadImage("Pause_1.png");
+		PImage load4 = pro.loadImage("Pause_2.png");
+		speedDownUi.spriteArray.add(getReversePImage(load3));
+		speedDownUi.spriteArray.add(getReversePImage(load4));
 		
 		uiElements.add(speedDownUi);
 		
@@ -173,6 +203,25 @@ public class UI {
 		
 		// Neural network
 		uiNeuralNetwork = new UiNeuralNetwork(pro, pro.width * 0.5f, pro.height * 0.02f, pro.width * 0.2f, pro.height * 0.15f);
+	}
+	
+	public void handleToggleButtonEvents(GImageToggleButton button, GEvent event) {
+		if (event == GEvent.CLICKED) {
+			if(button == showLinesOfSightButton) {
+				env.showAnimalLines();
+			} else if(button == showLinesButton) {
+				beginDrawingWalls();
+			} else if(button == showWaterButton) {
+				beginDrawingSea();
+			} else if(button == showZoomButton && selectedSpecies != null) {
+				if(zoomedIn) {
+					zoomOut();
+				} else {
+					zoomIn();
+				}
+			}
+			
+		}
 	}
 	
 	public void handleButtonEvents(GButton button, GEvent event) {
@@ -193,7 +242,7 @@ public class UI {
 		  } else if(button == createSpecies && animalPanel) {
 			  env.createSpecies(
 					  env.imageManager.animalImages.get(env.imageManager.animalImages.size() -1),
-					  animalFilePath, getName(),  getSpeed(), getSize(), getLifespan(), getWaterMove(), getFood());
+					  animalFilePath, getName(),  getSpeed(), getSize(), getLifespan(), getWaterMove(), getFood(), getMutation());
 			  closeAnimalPanel();
 		  }
 		}
@@ -259,6 +308,16 @@ public class UI {
 			return new omnivorous();
 		} else {
 			return new carnivorous();
+		}
+	}
+	
+	private BehaviourMutation getMutation() {
+		if(behaviourNormalMutation.isSelected()) {
+			return new mediumMutation();
+		} else if(behaviourHighMutation.isSelected()) {
+			return new highMutation();
+		} else {
+			return new lowMutation();
 		}
 	}
 	
@@ -379,6 +438,23 @@ public class UI {
 		foodGroup.addControls(behaviourFoodHerbivore, behaviourFoodCarnivore, behaviourFoodOmnivore);
 		behaviourFoodHerbivore.setSelected(true);
 		
+		// Mutation
+		startX = startX + distanceBetweenRadios;
+		mutateLabel = new GLabel(pro, startX, startY, radioWidth, radioHeight, "Mutation Rate");
+		panelControls.add(mutateLabel);
+
+		behaviourNormalMutation = new GOption(pro, startX, startY + radioHeight, radioWidth, radioHeight, "Normal");
+		behaviourHighMutation = new GOption(pro, startX, startY + radioHeight * 2, radioWidth, radioHeight, "High");
+		behaviourLowMutation = new GOption(pro, startX, startY + radioHeight * 3, radioWidth, radioHeight, "Low");
+		
+		panelControls.add(behaviourNormalMutation);
+		panelControls.add(behaviourHighMutation);
+		panelControls.add(behaviourLowMutation);
+		
+		mutationGroup = new GToggleGroup();
+		mutationGroup.addControls(behaviourNormalMutation, behaviourHighMutation, behaviourLowMutation);
+		behaviourNormalMutation.setSelected(true);
+		
 		// Add animal to environment button
 		createSpecies = new GButton(pro, pro.width * 0.28f, pro.height * 0.53f, buttonWidth, buttonHeight, "Create Animal");
 		panelControls.add(createSpecies);
@@ -481,8 +557,13 @@ public class UI {
 		
 		
 		// Show charts
-		if(selectedSpecies != null)
+		if(selectedSpecies != null) {
 			selectedSpecies.showCharts();
+			int size = selectedSpecies.speciesNumber;
+			pro.noStroke();
+			pro.fill(250,50,60);
+			pro.rect(iconStartX - 4 + iconJumpSizeX * size, iconStartY - 4, iconHeight + 4, iconWidth + 4);
+		}
 		
 		// Show wall drawing operations
 		showWallInProgress();
@@ -613,9 +694,9 @@ public class UI {
 	public void beginDrawingWalls() {
 		this.drawWalls = !this.drawWalls;
 		if(drawWalls) {
-			zoomOut();
+			//zoomOut();
 		} else {
-			zoomIn();
+			//zoomIn();
 			resetWalls();
 		}
 	}
@@ -624,14 +705,18 @@ public class UI {
 		zoomer.reset();
 		zoomer.allowPanButton(false);
 		zoomer.allowZoomButton(false);
+		zoomer.setMinZoomScale(1);
 		zoomer.setMaxZoomScale(1);
+		zoomedIn = false;
 	}
 	
 	private void zoomIn() {
 		zoomer.reset();
-		zoomer.allowPanButton(true);
-		zoomer.allowZoomButton(true);
+		zoomer.allowPanButton(false);
+		zoomer.allowZoomButton(false);
 		zoomer.setMaxZoomScale(maxZoom);
+		zoomer.setMinZoomScale(maxZoom);
+		zoomedIn = true;
 	}
 	
 	public void drawWallsPressed() {
@@ -688,11 +773,11 @@ public class UI {
 		if(!drawingSea) {
 			// Start drawing
 			drawingSea = true;
-			zoomOut();
+			//zoomOut();
 		} else {
 			// End drawing
 			drawingSea = false;
-			zoomIn();
+			//zoomIn();
 		}
 	}
 	
@@ -737,11 +822,6 @@ public class UI {
 	
 	public void addAnimalIcon(Species species) {
 		int size = animalIconArray.size();
-		float startX = pro.width * 0.01f;
-		float startY = pro.height * 0.03f;
-		float jumpSizeX = pro.width * 0.04f;
-		float height = pro.height * 0.04f;
-		float width = height;
-		animalIconArray.add(new AnimalIcon(pro, species, startX + jumpSizeX * size, startY, height, width));
+		animalIconArray.add(new AnimalIcon(pro, species, iconStartX + iconJumpSizeX * size, iconStartY, iconHeight, iconWidth));
 	}
 }

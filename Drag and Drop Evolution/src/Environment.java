@@ -87,9 +87,10 @@ public class Environment {
 	
 	public void createSpecies(PImage animalImage, String filePath, String name,
 			BehaviourSpeed behaveSpeed, BehaviourSize behaveSize, BehaviourLifespan behaveLifespan,
-			BehaviourWaterMovement behaveWaterMovement, BehaviourFood behaveFood) {
+			BehaviourWaterMovement behaveWaterMovement, BehaviourFood behaveFood, BehaviourMutation behaveMutation) {
+		
 		Species newSpecies = new Species(this.pro, this, filePath, name, userInterface, speciesCount,
-				animalImage, behaveSpeed, behaveSize, behaveLifespan, behaveWaterMovement, behaveFood);
+				animalImage, behaveSpeed, behaveSize, behaveLifespan, behaveWaterMovement, behaveFood, behaveMutation);
 		speciesArray.add(newSpecies);
 		speciesCount = speciesCount + 1;
 		createAnimals(speciesArray.get(speciesArray.size() -1));

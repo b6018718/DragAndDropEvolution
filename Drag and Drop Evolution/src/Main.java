@@ -10,10 +10,11 @@ import g4p_controls.GButton;
 import g4p_controls.GDropList;
 import g4p_controls.GEvent;
 import g4p_controls.GImageButton;
+import g4p_controls.GImageToggleButton;
 import g4p_controls.GToggleControl;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 1.9";
+	String versionNumber = "Alpha 2.1";
 	
 	// Screen dimensions
 	int scWidth;
@@ -142,7 +143,7 @@ public class Main extends PApplet {
 		secondPassedFrame = false;
 	}
 	
-	public void keyPressed() {
+	/*public void keyPressed() {
 		if(key == 'l' || key == 'L') {
 			env.showAnimalLines();
 		} else if(key == 'w' || key == 'W') {
@@ -150,7 +151,7 @@ public class Main extends PApplet {
 		} else if(key == 's' || key == 'S') {
 			userInterface.beginDrawingSea();
 		}
-	}
+	}*/
 	
 	public void mousePressed() {
 		if(mouseButton == LEFT) {
@@ -274,6 +275,10 @@ public class Main extends PApplet {
 	
 	public void handleButtonEvents(GImageButton button, GEvent event) {
 		userInterface.handleButtonEvents(button, event);
+	}
+	
+	public void handleToggleButtonEvents(GImageToggleButton button, GEvent event) {
+		userInterface.handleToggleButtonEvents(button, event);
 	}
 	
 	public void getAnimalImage() {

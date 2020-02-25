@@ -10,14 +10,14 @@ public class Gene {
 	// 5% chance of mutation
 	private double mutationChance = 0.5;
 	// 20% variation spread per mutation (-/+)
-	private double mutationRate = 0.15;
-	private double behaviourMutationRate = 0.1;
+	//private double mutationRate = 0.15;
+	//private double behaviourMutationRate = 0.1;
 	// If mutation is allowed
 	public boolean mutate = true;
 	public Species species;
 	
 	public void generateRandomNetwork() {
-		neuralNetwork =  new NeuralNetwork(5, 2, 7, 5);
+		neuralNetwork =  new NeuralNetwork(4, 2, 5, 5);
 	}
 	
 	Gene(Gene parent, Species species){
@@ -60,7 +60,7 @@ public class Gene {
 				speed = applyMutation(parent.speed);
 				lifeSpan = applyMutation(parent.lifeSpan);
 				mutateColor(parent.colour);
-				neuralNetwork.mutate(behaviourMutationRate);
+				neuralNetwork.mutate(species.behaveMutation.getBehaviourMutationRate());
 			} else {
 				// No mutation occurred
 				size = parent.size;
@@ -97,11 +97,13 @@ public class Gene {
 	}
 	
 	private double randomMutationChange() {
+		double mutationRate = species.behaveMutation.getPhysicalMutationRate();
 		return random(1-mutationRate, 1+mutationRate);
 	}
 	
 	private double randomColourMutation() {
 		double colourShiftMultiplier = 5;
+		double mutationRate = species.behaveMutation.getPhysicalMutationRate();
 		return random((1-mutationRate) * colourShiftMultiplier, (1+mutationRate) * colourShiftMultiplier);
 	}
 	

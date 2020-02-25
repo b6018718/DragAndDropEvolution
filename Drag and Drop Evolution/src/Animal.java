@@ -185,7 +185,7 @@ public class Animal extends EnvironmentObject {
 	
 	boolean hasFoodInBelly() {
 		// Must have at least % food or the egg counter will restart
-		return (timeTillStarve / startingTimeTillStarve > 0.25f);
+		return (timeTillStarve / startingTimeTillStarve > 0.45f);
 	}
 	
 	private PVector getAimVector(float deltaTime) {		
@@ -237,10 +237,10 @@ public class Animal extends EnvironmentObject {
 		
 		//double arg7 = normaliseEggTime();
 		
-		double arg8 = 0;
+		/*double arg8 = 0;
 		if(insideWater) {
 			arg8 = 1;
-		}
+		}*/
 		
 		/*double arg9;
 		if(this.restMode)
@@ -248,7 +248,7 @@ public class Animal extends EnvironmentObject {
 		else
 			arg9 = 0;*/
 		
-		nArgs = new double[]{ arg1, arg2, arg4, arg5, arg8 };
+		nArgs = new double[]{ arg1, arg2, arg4, arg5 };
 		weighOptions = gene.neuralNetwork.guess(nArgs);
 		int selection = getIndexOfMax(weighOptions);
 		
