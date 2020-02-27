@@ -6,7 +6,7 @@ public class Gene {
 	double speed;
 	double lifeSpan;
 	Color colour = new Color();
-	NeuralNetwork neuralNetwork;
+	NeuralNetwork neuralNetwork = null;
 	// 5% chance of mutation
 	private double mutationChance = 0.5;
 	// 20% variation spread per mutation (-/+)
@@ -17,7 +17,13 @@ public class Gene {
 	public Species species;
 	
 	public void generateRandomNetwork() {
-		neuralNetwork =  new NeuralNetwork(4, 2, 5, 5);
+		if(species.brainFilePath != "" && species.globalSpeciesNumber < 20) {
+			neuralNetwork = NeuralNetwork.readFromFile(species.brainFilePath);
+		}
+		
+		if(neuralNetwork == null) {
+			neuralNetwork =  new NeuralNetwork(4, 2, 5, 5);
+		}
 	}
 	
 	Gene(Gene parent, Species species){

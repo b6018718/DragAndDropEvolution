@@ -87,10 +87,11 @@ public class Environment {
 	
 	public void createSpecies(PImage animalImage, String filePath, String name,
 			BehaviourSpeed behaveSpeed, BehaviourSize behaveSize, BehaviourLifespan behaveLifespan,
-			BehaviourWaterMovement behaveWaterMovement, BehaviourFood behaveFood, BehaviourMutation behaveMutation) {
+			BehaviourWaterMovement behaveWaterMovement, BehaviourFood behaveFood, BehaviourMutation behaveMutation,
+			String brainFilePath) {
 		
 		Species newSpecies = new Species(this.pro, this, filePath, name, userInterface, speciesCount,
-				animalImage, behaveSpeed, behaveSize, behaveLifespan, behaveWaterMovement, behaveFood, behaveMutation);
+				animalImage, behaveSpeed, behaveSize, behaveLifespan, behaveWaterMovement, behaveFood, behaveMutation, brainFilePath);
 		speciesArray.add(newSpecies);
 		speciesCount = speciesCount + 1;
 		createAnimals(speciesArray.get(speciesArray.size() -1));
@@ -261,6 +262,9 @@ public class Environment {
 	void clickOnEnv(PVector mouseZoomed, PVector mouseUnzoomed) {
 		if(withinEnv(mouseUnzoomed)) {
 			Animal an = null;
+			if(userInterface.saveModelButton != null) {
+				userInterface.saveModelButton.dispose();
+			}
 			if(hashGrid != null) {
 				an = checkForAnimalCollisions(mouseZoomed, null);
 			} else {

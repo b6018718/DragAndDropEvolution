@@ -138,6 +138,11 @@ public class UI {
 	GImageToggleButton showWaterButton;
 	GImageToggleButton showZoomButton;
 	
+	GButton saveModelButton;
+	GButton loadBrain;
+	
+	String brainFilePath;
+	
 	UI(PApplet pro, Environment env, double uiOffset, ImageManager imageManager){
 		this.pro = pro;
 		this.env = env;
@@ -242,10 +247,25 @@ public class UI {
 		  } else if(button == createSpecies && animalPanel) {
 			  env.createSpecies(
 					  env.imageManager.animalImages.get(env.imageManager.animalImages.size() -1),
-					  animalFilePath, getName(),  getSpeed(), getSize(), getLifespan(), getWaterMove(), getFood(), getMutation());
+					  animalFilePath, getName(),  getSpeed(), getSize(), getLifespan(), getWaterMove(), getFood(), getMutation(),
+					  brainFilePath);
 			  closeAnimalPanel();
+		  } else if(button == saveModelButton) {
+			  pro.thread("saveBrainThread");
+		  } else if(button == loadBrain) {
+			  pro.thread("loadBrainThread");
 		  }
 		}
+	}
+	
+	public void loadBrainThread() {
+		brainFilePath = G4P.selectInput("Select where to load");
+		loadBrain.setEnabled(false);
+	}
+	
+	public void saveBrainThread() {
+		String filePath = G4P.selectOutput("Select where to save");
+		uiNeuralNetwork.animal.gene.neuralNetwork.writeToFile(filePath);
 	}
 	
 	public void handleButtonEvents(GImageButton button, GEvent event) {
@@ -328,6 +348,8 @@ public class UI {
 	  	//animalPanelUi.setDraggable(false);
 	  	animalPanelUi.setCollapsible(false);
 	  	animalPanelUi.setLocalColorScheme(GCScheme.GREEN_SCHEME);
+	  	
+	  	brainFilePath = "";
 	  
 	  	float buttonWidth = pro.width * 0.05f;
 	  	float buttonHeight = pro.height * 0.05f;
@@ -336,6 +358,10 @@ public class UI {
 	  	exitButton = new GButton(pro, pro.width * 0.54f, pro.height * 0.03f, buttonWidth, buttonHeight, "Exit");
 	  	exitButton.setLocalColorScheme(GCScheme.ORANGE_SCHEME);
 	  	panelControls.add(exitButton);
+	  	
+	  	loadBrain = new GButton(pro, pro.width * 0.1f + buttonWidth * 4, pro.height * 0.03f, buttonWidth, buttonHeight, "Load Brain");
+	  	loadBrain.setLocalColorScheme(GCScheme.PURPLE_SCHEME);
+	  	panelControls.add(loadBrain);
 	  
 	  	// Animal Name Text Field
 	  	animalNameTextField = new GTextField(pro, pro.width * 0.01f, pro.height * 0.12f, pro.width * 0.09f, pro.height * 0.025f);
@@ -616,6 +642,9 @@ public class UI {
 	}
 	
 	public void showAnimalChart(Animal an) {
+		saveModelButton = new GButton(pro, pro.width * 0.94f, pro.height * 0.36f, pro.width * 0.04f, pro.height * 0.05f, "Save Brain");
+		saveModelButton.setLocalColorScheme(GCScheme.ORANGE_SCHEME);
+		
 		barCharts.clear();
 		RectObj position = new RectObj(pro.width * 0.8f, pro.height * 0.4f, pro.width * 0.2f, pro.height * 0.2f);
 		UiBarChart barChart = new UiBarChart(position, an, pro);

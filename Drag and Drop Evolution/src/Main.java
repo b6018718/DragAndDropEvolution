@@ -14,7 +14,7 @@ import g4p_controls.GImageToggleButton;
 import g4p_controls.GToggleControl;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 2.1";
+	String versionNumber = "Alpha 2.2";
 	
 	// Screen dimensions
 	int scWidth;
@@ -287,5 +287,13 @@ public class Main extends PApplet {
 	
 	public void saveTableThread() {
 		userInterface.saveTableThread();
+	}
+	
+	public void loadBrainThread() {
+		userInterface.loadBrainThread();
+	}
+	
+	public void saveBrainThread() {
+		userInterface.saveBrainThread();
 	}
 }

@@ -58,13 +58,14 @@ public class Species {
 	
 	// Mutation
 	public BehaviourMutation behaveMutation;
+	String brainFilePath; 
 	
 	PApplet pro;
 	
 	Species(PApplet pro, Environment env, String imageFilePath, String name, UI userInterface,
 			int speciesNumber, PImage animalImage, BehaviourSpeed behaveSpeed,
 			BehaviourSize behaveSize, BehaviourLifespan behaveLifespan, BehaviourWaterMovement behaveWaterMovement,
-			BehaviourFood behaveFood, BehaviourMutation behaveMutation){
+			BehaviourFood behaveFood, BehaviourMutation behaveMutation, String brainfilePath){
 		this.speciesNumber = speciesNumber;
 		this.animalImage = animalImage;
 		this.userInterface = userInterface;
@@ -77,6 +78,7 @@ public class Species {
 		this.name = name;
 		this.behaveFood = behaveFood;
 		this.behaveMutation = behaveMutation;
+		this.brainFilePath = brainfilePath;
 		
 		// Create population line chart
 		float chartXAn = (float) (pro.width * 0.81);
