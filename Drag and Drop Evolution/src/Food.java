@@ -10,16 +10,17 @@ public class Food extends EnvironmentObject {
 	Food(PApplet parent, ArrayList <Species> species, ArrayList <Food> foodArray, Environment env, HashGrid<EnvironmentObject> hashGrid, PVector startingLoc){
 		// Call the parent constructor
 		super(parent, env, species, foodArray, hashGrid, null);
-		width = pro.width * 0.005f;
-		
-		// Find a random position for the object
-		if(startingLoc == null) {
-			findAStartingLocation();
-		} else {
-			position = startingLoc;
+		if(pro != null) {
+			width = pro.width * 0.005f;
+			
+			// Find a random position for the object
+			if(startingLoc == null) {
+				findAStartingLocation();
+			} else {
+				position = startingLoc;
+			}
+			setHashPos();
 		}
-		setHashPos();
-
 		
 		// Set the colour
 		colour.r = 0;

@@ -81,41 +81,43 @@ public class Species {
 		this.brainFilePath = brainfilePath;
 		
 		// Create population line chart
-		float chartXAn = (float) (pro.width * 0.81);
-		float chartYAn = (float) (pro.height * 0.65);
-		float chartWidthAn = (float) (pro.width * 0.18);
-		float chartHeightAn = (float) (pro.height * 0.25);
-		RectObj anRect = new RectObj(chartXAn, chartYAn, chartWidthAn, chartHeightAn);
-		
-		animalPopulation = new UiLineChart(pro, env, anRect, 1, true, POPULATION);
-		
-		// Frame rate chart
-		fpsLineChart = new UiLineChart(pro, env, anRect, 60, true, FRAMERATE);
-		fpsLineChart.display = false;
-		
-		// Create population line chart
-		birthRate = new UiLineChart(pro, env, anRect, 1, true, LIFESPAN);
-		birthRate.display = false;
-		
-		sizeChart = new UiLineChart(pro, env, anRect, 1, true, SIZE);
-		sizeChart.display = false;
-		
-		speedChart = new UiLineChart(pro, env, anRect, 1, true, SPEED);
-		speedChart.display = false;
-		
-		foodChart = new UiLineChart(pro, env, anRect, 1, true, FOOD);
-		foodChart.display = false;
-		
-		hungerChart = new UiLineChart(pro, env, anRect, 1, true, HUNGER);
-		hungerChart.display = false;
-		
-		uiLineCharts.add(animalPopulation);
-		uiLineCharts.add(birthRate);
-		uiLineCharts.add(sizeChart);
-		uiLineCharts.add(speedChart);
-		uiLineCharts.add(foodChart);
-		uiLineCharts.add(fpsLineChart);
-		uiLineCharts.add(hungerChart);
+		if(pro != null) {
+			float chartXAn = (float) (pro.width * 0.81);
+			float chartYAn = (float) (pro.height * 0.65);
+			float chartWidthAn = (float) (pro.width * 0.18);
+			float chartHeightAn = (float) (pro.height * 0.25);
+			RectObj anRect = new RectObj(chartXAn, chartYAn, chartWidthAn, chartHeightAn);
+			
+			animalPopulation = new UiLineChart(pro, env, anRect, 1, true, POPULATION);
+			
+			// Frame rate chart
+			fpsLineChart = new UiLineChart(pro, env, anRect, 60, true, FRAMERATE);
+			fpsLineChart.display = false;
+			
+			// Create population line chart
+			birthRate = new UiLineChart(pro, env, anRect, 1, true, LIFESPAN);
+			birthRate.display = false;
+			
+			sizeChart = new UiLineChart(pro, env, anRect, 1, true, SIZE);
+			sizeChart.display = false;
+			
+			speedChart = new UiLineChart(pro, env, anRect, 1, true, SPEED);
+			speedChart.display = false;
+			
+			foodChart = new UiLineChart(pro, env, anRect, 1, true, FOOD);
+			foodChart.display = false;
+			
+			hungerChart = new UiLineChart(pro, env, anRect, 1, true, HUNGER);
+			hungerChart.display = false;
+			
+			uiLineCharts.add(animalPopulation);
+			uiLineCharts.add(birthRate);
+			uiLineCharts.add(sizeChart);
+			uiLineCharts.add(speedChart);
+			uiLineCharts.add(foodChart);
+			uiLineCharts.add(fpsLineChart);
+			uiLineCharts.add(hungerChart);
+		}
 	}
 	
 	public void selectSpecies() {

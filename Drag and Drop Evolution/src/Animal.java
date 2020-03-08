@@ -72,37 +72,37 @@ public class Animal extends EnvironmentObject {
 		
 		// Survival
 		int placeAttempts = 20;
-		
-		if(eggPos == null) {
-			do {
-				position.x = pro.random(env.env.x, env.env.topX - width);
-				position.y = pro.random(env.env.y, env.env.topY - width);
-				placeAttempts--;
-				if(placeAttempts < 0) {
-					placeAttempts = 20;
-					width--;
-				}
-			} while (collide(position, 0) && width > 0);
-		} else {
-			position.x = eggPos.x;
-			position.y = eggPos.y;
+		if(pro != null) {
+			if(eggPos == null) {
+				do {
+					position.x = pro.random(env.env.x, env.env.topX - width);
+					position.y = pro.random(env.env.y, env.env.topY - width);
+					placeAttempts--;
+					if(placeAttempts < 0) {
+						placeAttempts = 20;
+						width--;
+					}
+				} while (collide(position, 0) && width > 0);
+			} else {
+				position.x = eggPos.x;
+				position.y = eggPos.y;
+			}
+			setHashPos();
+			
+			// Set random colour
+			if(gene.colour == null) {
+				colour.r = (int) pro.random(0, 255);
+				colour.g = (int) pro.random(0, 255);
+				colour.b = (int) pro.random(0, 255);
+				gene.colour = colour;
+			} else {
+				colour = gene.colour;
+			}
+			
+			// Movement
+			movementSpeed = (float) gene.speed;
+			direction = getRandomAngle();
 		}
-		setHashPos();
-		
-		// Set random colour
-		if(gene.colour == null) {
-			colour.r = (int) pro.random(0, 255);
-			colour.g = (int) pro.random(0, 255);
-			colour.b = (int) pro.random(0, 255);
-			gene.colour = colour;
-		} else {
-			colour = gene.colour;
-		}
-		
-		// Movement
-		movementSpeed = (float) gene.speed;
-		direction = getRandomAngle();
-		
 		// Time till starve
 		startingTimeTillStarve = calculateStarveTime();
 		timeTillStarve = startingTimeTillStarve;
@@ -227,11 +227,14 @@ public class Animal extends EnvironmentObject {
 		// Current angle
 		//double arg3 = this.direction / 360;
 		
-		float nearestAnimal = getNearAnimalAngle();
+		float[] nearestAnimal = getNearAnimalAngle();
 		// Animal angle
-		double arg4 = normaliseRadians(nearestAnimal);
+		double arg4 = normaliseRadians(nearestAnimal[0]);
+		// Distance to Animal
+		double arg5 = normaliseSight(nearestAnimal[1]);
+		
 		// Distance to closest wall
-		double arg5 = (double) (normaliseX((float) this.distanceToWall));
+		double arg6 = (double) (normaliseX((float) this.distanceToWall));
 		//System.out.println(arg5);
 		//double arg6 = normaliseHunger();
 		
@@ -248,7 +251,7 @@ public class Animal extends EnvironmentObject {
 		else
 			arg9 = 0;*/
 		
-		nArgs = new double[]{ arg1, arg2, arg4, arg5 };
+		nArgs = new double[]{ arg1, arg2, arg4, arg5, arg6 };
 		weighOptions = gene.neuralNetwork.guess(nArgs);
 		int selection = getIndexOfMax(weighOptions);
 		
@@ -436,25 +439,38 @@ public class Animal extends EnvironmentObject {
 		return new float[] {PApplet.radians(180), env.sightDistance};
 	}
 	
-	private float getNearAnimalAngle() {
+	private float[] getNearAnimalAngle() {
 		if(hashGrid != null) {
+			Animal closestAnimal = null;
+			float sightX = position.x + this.width * 2 * PApplet.cos(PApplet.radians(direction));
+			float sightY = position.y + this.width * 2 * PApplet.sin(PApplet.radians(direction));
+			double closestDistance = 100.0;
 			Set<EnvironmentObject> objectsInRange = hashGrid.get(position);
 			for (EnvironmentObject obj : objectsInRange) {
 				if(obj instanceof Animal) {
 					Animal an = (Animal) obj;
 					if(an.gene.species.speciesNumber != this.gene.species.speciesNumber) {
-						float angle = getAngle(this.position, an.position);
-						if(env.showLines)
-							pro.line(position.x, position.y, an.position.x, an.position.y);
-						angle = angle - PApplet.radians(this.direction + 180);
-						if(angle < 0)
-							angle = angle * -1;
-						return angle;
+						double dist = PApplet.dist(sightX, sightY, an.position.x, an.position.y);
+						if(dist < closestDistance) {
+							closestAnimal = an;
+							closestDistance = dist;
+						}
 					}
 				}
 			}
+			
+			if(closestAnimal != null) {
+				float angle = getAngle(this.position, closestAnimal.position);
+				if(env.showLines)
+					pro.line(position.x, position.y, closestAnimal.position.x, closestAnimal.position.y);
+				angle = angle - PApplet.radians(this.direction + 180);
+				if(angle < 0)
+					angle = angle * -1;
+				angle = angle * 2;
+				return new float[] {angle, (float) closestDistance};
+			}
 		}
-		return PApplet.radians(180);
+		return new float[] {PApplet.radians(180), env.sightDistance};
 	}
 	
 	float getAngle(PVector a, PVector b){

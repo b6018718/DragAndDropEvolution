@@ -56,18 +56,23 @@ public class Environment {
 	float sightDistance;
 	
 	Environment(PApplet processing, RectObj env, ImageManager imageManager){
-		pro = processing;
+		if(processing != null)
+			pro = processing;
 		this.env = env;
-		this.imageManager = imageManager;
+		if(imageManager != null)
+			this.imageManager = imageManager;
 		
 		// Get the max proper max size
-		maxObjectSize = calculateObjectSize();
-		sightDistance = maxObjectSize * 9 + 1;
-		
-		// Create a hash grid
-		if(useHashGrid) {
-			hashGrid = new HashGrid<EnvironmentObject>(env.topX, env.topY, sightDistance);
+		if(pro != null) {
+			maxObjectSize = calculateObjectSize();
+			sightDistance = maxObjectSize * 9 + 1;
+			
+			// Create a hash grid
+			if(useHashGrid) {
+				hashGrid = new HashGrid<EnvironmentObject>(env.topX, env.topY, sightDistance);
+			}
 		}
+		
 		
 		setupWalls();
 		//createAnimals();
@@ -95,8 +100,10 @@ public class Environment {
 		speciesArray.add(newSpecies);
 		speciesCount = speciesCount + 1;
 		createAnimals(speciesArray.get(speciesArray.size() -1));
-		userInterface.addAnimalIcon(newSpecies);
-		newSpecies.selectSpecies();
+		if(pro != null) {
+			userInterface.addAnimalIcon(newSpecies);
+			newSpecies.selectSpecies();
+		}
 	}
 	
 	private void createAnimals(Species species) {
@@ -241,7 +248,7 @@ public class Environment {
 	
 	void addFood() {
 		foodArray.add(new Food(pro, speciesArray, foodArray, this, hashGrid, null));
-		if(useHashGrid) {
+		if(useHashGrid && pro != null) {
 			hashGrid.add(foodArray.get(foodArray.size() - 1));
 		}
 	}
@@ -252,7 +259,7 @@ public class Environment {
 				// Create new animal
 				ArrayList<Animal> animals = speciesArray.get(i).animals;
 				animals.add(new Animal(pro, speciesArray, foodArray, this, hashGrid, imageManager, gene, eggPos, eggArray));
-				if(useHashGrid) {
+				if(useHashGrid && pro != null) {
 					hashGrid.add(animals.get(animals.size() -1));
 				}
 			}
