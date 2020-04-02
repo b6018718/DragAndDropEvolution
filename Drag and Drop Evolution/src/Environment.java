@@ -242,7 +242,8 @@ public class Environment {
 		
 		for (int i = 0; i < foodArray.size(); i++) {
 			Food food = foodArray.get(i);
-			food.show();
+			if(pro != null)
+				food.show();
 		}
 	}
 	

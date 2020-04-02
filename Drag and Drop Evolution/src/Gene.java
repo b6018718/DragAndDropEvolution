@@ -48,7 +48,7 @@ public class Gene {
 			size = 12;
 			speed = 50;
 			lifeSpan = 60000;
-			colour = null;
+			//colour = null;
 			generateRandomNetwork();
 			neuralNetwork.setActivationFunction(ActivationFunction.RELU);
 		} else {
