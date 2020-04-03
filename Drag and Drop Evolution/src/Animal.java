@@ -168,6 +168,7 @@ public class Animal extends EnvironmentObject {
 		
 		// Check if can lay egg
 		if(timeTillLayEgg < 0 && eatenOnce) {
+			numberOfChildren++;
 			// Lay egg
 			timeTillLayEgg = startingTimeTillLayEgg;
 			return new Egg(pro, env, species, foodArray, hashGrid, imageManager, gene, position);

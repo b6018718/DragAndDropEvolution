@@ -1,6 +1,7 @@
 import org.junit.BeforeClass;
 import org.junit.jupiter.api.Test;
 
+import basicneuralnetwork.NeuralNetwork;
 import junit.framework.TestCase;
 import processing.core.PImage;
 
@@ -10,7 +11,7 @@ class UnitTests extends TestCase{
 	//ImageManager imageManager;
 	
 	public void setUp() {
-		RectObj envArea = new RectObj(0, 0, 0, 0);
+		RectObj envArea = new RectObj(0, 0, 100, 100);
 		
 		//imageManager = new ImageManager(this);
 		env = new Environment(null, envArea, null);
@@ -59,11 +60,6 @@ class UnitTests extends TestCase{
 		// TEST 1 Check correct number of animals added
 		setUp();
 		assertTrue(env.speciesArray.get(0).animals.size() == env.numOfAnimals);
-		//for(int i = 0; i < 1000; i++) {
-			//animals.add(new Animal(this, animals, foodArray, envArea, null, null, new Gene(null), null));
-			//assertTrue(animals.get(i).getRandomAngle() >= 0);
-			//assertTrue(animals.get(i).getRandomAngle() <= 360);
-		//}
 	}
 	
 	@Test
@@ -477,5 +473,359 @@ class UnitTests extends TestCase{
 		int foodAmountAfter = env.foodArray.size();
 		// Check that the egg array is empty
 		assertTrue(foodAmountAfter == foodAmountBefore + env.foodPerEvent);
+	}
+	
+	@Test
+	void animalEatsAnEggAndItDissapears() {
+		// TEST 41 Check that the animal A can eat an egg laid by animal B
+		setUp();
+		// Add the second species
+		createHerbivoreSpecies(env);
+		// Get the animal
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		Animal animalB = env.speciesArray.get(1).animals.get(0);
+		// Add the food
+		env.addFood();
+		// Eat the food so the belly is full
+		animalB.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalB.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalB, eggTime);
+		// Animal A eats the egg
+		animalA.eat(env.eggArray.get(0), null);
+		// Check if an egg array is now empty
+		assertTrue(env.eggArray.size() == 0);
+	}
+	
+	@Test
+	void animalEatsAnEggAndEatenOnceIsSet() {
+		// TEST 42 Check that the animal A can eat an egg laid by animal B and it counts as eating once
+		setUp();
+		// Add the second species
+		createHerbivoreSpecies(env);
+		// Get the animal
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		Animal animalB = env.speciesArray.get(1).animals.get(0);
+		// Add the food
+		env.addFood();
+		// Eat the food so the belly is full
+		animalB.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalB.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalB, eggTime);
+		// Animal A eats the egg
+		animalA.eat(env.eggArray.get(0), null);
+		// Check if an egg array is now empty
+		assertTrue(animalA.eatenOnce == true);
+	}
+	
+	@Test
+	void animalEatsAnEggAndGainsEnergy() {
+		// TEST 43 Check that the animal A can eat an egg laid by animal B and it counts as eating once
+		setUp();
+		// Add the second species
+		createHerbivoreSpecies(env);
+		// Get the animal
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		Animal animalB = env.speciesArray.get(1).animals.get(0);
+		// Add the food
+		env.addFood();
+		// Eat the food so the belly is full
+		animalB.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalB.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalB, eggTime);
+		// Subtract 100ms of energy from the animal
+		animalA.checkIfDead(100);
+		// Get a reading of the energy before
+		float energyBefore = animalA.timeTillStarve;
+		// Animal A eats the egg
+		animalA.eat(env.eggArray.get(0), null);
+		// Get a reading of the energy after
+		float energyAfter = animalA.timeTillStarve;
+		// Check if an egg array is now empty
+		assertTrue(energyAfter > energyBefore);
+	}
+	
+	@Test
+	void checkSeaHasInitialised() {
+		// TEST 44 check that the sea value has properly initialised
+		setUp();
+		assertTrue(env.sea.size() == 0);
+	}
+	
+	@Test
+	void checkEnvAreaHasInitialised() {
+		// TEST 45 check that the environment area dimensions has properly initialised
+		setUp();
+		assertTrue(env.env != null
+				&& env.env.width != 0
+				&& env.env.height != 0);
+	}
+	
+	@Test
+	void checkAnimalHasColour() {
+		// TEST 46 Check that the gene of an animal contains a colour variable
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		assertTrue(animalA.gene.colour != null);
+	}
+	
+	@Test
+	void checkThatEggsHaveColour() {
+		// TEST 47 Check that the gene of an egg contains a colour variable
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		env.addFood();
+		// Eat the food so the belly is full
+		animalA.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalA.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalA, eggTime);
+		assertTrue(env.eggArray.get(0).gene.colour != null);
+	}
+	
+	@Test
+	void checkAnimalMutateVariableInitialised() {
+		// TEST 48 Check that the mutate variable has been set to true for animals
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		assertTrue(animalA.gene.mutate == true);
+	}
+	
+	@Test
+	void checkThatEggsCanMutate() {
+		// TEST 49 Check that the mutate variable has been set for eggs
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		env.addFood();
+		// Eat the food so the belly is full
+		animalA.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalA.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalA, eggTime);
+		assertTrue(env.eggArray.get(0).gene.mutate == true);
+	}
+	
+	@Test
+	void animalNeuralNetworkInitialised() {
+		// TEST 50 Check that the neural network of an animal has been initialised
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		assertTrue(animalA.gene.neuralNetwork != null);
+	}
+	
+	@Test
+	void eggNeuralNetworkInitialised() {
+		// TEST 51 Check that the neural network of an egg has been initialised
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		env.addFood();
+		// Eat the food so the belly is full
+		animalA.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalA.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalA, eggTime);
+		assertTrue(env.eggArray.get(0).gene.neuralNetwork != null);
+	}
+	
+	@Test
+	void checkThatNeuralNetworkIsDifferentBetweenParentAndChild() {
+		// TEST 52 Check that the neural network of an animal has been cloned and mutated for the egg
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		env.addFood();
+		// Eat the food so the belly is full
+		animalA.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalA.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalA, eggTime);
+		assertTrue(env.eggArray.get(0).gene.neuralNetwork != animalA.gene.neuralNetwork);
+	}
+	
+	@Test
+	void numberOfChildrenIncreasesAfterGivingBirth() {
+		// TEST 53 Check that the number of children value increases after a child is born
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		env.addFood();
+		// Eat the food so the belly is full
+		animalA.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalA.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalA, eggTime);
+		assertTrue(animalA.numberOfChildren == 1);
+	}
+	
+	@Test
+	void geneGenerateRandomNeuralNetwork() {
+		// TEST 54 Check that the generate random network function generates a different neural network
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		NeuralNetwork neuralNetworkBefore = animalA.gene.neuralNetwork.copy();
+		// Generate a new neural network in the gene
+		animalA.gene.generateRandomNetwork();
+		assertTrue(neuralNetworkBefore != animalA.gene.neuralNetwork);
+	}
+	
+	@Test
+	void animalGeneHasLifespan() {
+		// TEST 55 Check that the lifespan of an animal has been initialised
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		assertTrue(animalA.gene.lifeSpan > 0);
+	}
+	
+	@Test
+	void eggGeneHasLifespan() {
+		// TEST 56 Check that the lifespan of an egg has been initialised
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		env.addFood();
+		// Eat the food so the belly is full
+		animalA.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalA.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalA, eggTime);
+		assertTrue(env.eggArray.get(0).gene.lifeSpan > 0);
+	}
+	
+	@Test
+	void animalGeneHasSize() {
+		// TEST 57 Check that the size of an animal has been initialised
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		assertTrue(animalA.gene.size > 0);
+	}
+	
+	@Test
+	void eggGeneHasSize() {
+		// TEST 58 Check that the size of an egg has been initialised
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		env.addFood();
+		// Eat the food so the belly is full
+		animalA.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalA.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalA, eggTime);
+		assertTrue(env.eggArray.get(0).gene.size > 0);
+	}
+	
+	@Test
+	void animalGeneHasSpecies() {
+		// TEST 59 Check that the species of an animal has been set
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		assertTrue(animalA.gene.species != null);
+	}
+	
+	@Test
+	void eggGeneHasSpecies() {
+		// TEST 60 Check that the species of an egg has been initialised
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		env.addFood();
+		// Eat the food so the belly is full
+		animalA.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalA.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalA, eggTime);
+		assertTrue(env.eggArray.get(0).gene.species != null);
+	}
+	
+	@Test
+	void checkParentAndChildHaveSameSpecies() {
+		// TEST 61 Check that the species of an egg and its parent are the same
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		env.addFood();
+		// Eat the food so the belly is full
+		animalA.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalA.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalA, eggTime);
+		assertTrue(env.eggArray.get(0).gene.species == animalA.gene.species);
+	}
+	
+	@Test
+	void animalGeneHasSpeed() {
+		// TEST 62 Check that the speed of an animal has been set
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		assertTrue(animalA.gene.speed > 0);
+	}
+	
+	@Test
+	void eggGeneHasSpeed() {
+		// TEST 63 Check that the speed of an egg gene has been initialised
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		env.addFood();
+		// Eat the food so the belly is full
+		animalA.eat(env.foodArray.get(0), null);
+		// Calculate how long it needs to lay an egg
+		int eggTime = (int) animalA.timeTillLayEgg + 1;
+		// Create an egg
+		env.animalReproduce(animalA, eggTime);
+		assertTrue(env.eggArray.get(0).gene.speed > 0);
+	}
+	
+	@Test
+	void speciesCountIsAccurate() {
+		// TEST 64 Check that the species count is kept up to date
+		// Set up function contains the creation of 1 omnivore species
+		setUp();
+		createHerbivoreSpecies(env);
+		createOmnivoreSpecies(env);
+		assertTrue(env.speciesCount == 3);
+		
+	}
+	
+	@Test
+	void animalDirectionIsValidAngle() {
+		// TEST 65 Check that the direction variable is an angle between 0 and 360
+		setUp();
+		assertTrue(env.speciesArray.get(0).animals.get(0).direction >= 0
+				&& env.speciesArray.get(0).animals.get(0).direction <= 360);
+	}
+	
+	@Test
+	void animalMovementSpeedIsValid() {
+		// TEST 66 Check that the calculated movement speed is a valid speed
+		setUp();
+		assertTrue(env.speciesArray.get(0).animals.get(0).movementSpeed >= 0);
+	}
+	
+	@Test
+	void waterCreatureMovesFasterInWater() {
+		// TEST 67 Check that a water creature moves faster in water than a land creature
+		setUp();
+		hydrophile waterCreature = new hydrophile();
+		hydrophobe landCreature = new hydrophobe();
+		boolean inWater = true;
+		assertTrue(waterCreature.getWaterMovement(10, inWater) > landCreature.getWaterMovement(10, inWater));
+	}
+	
+	@Test
+	void landCreatureMovesFasterOnLand() {
+		// TEST 68 Check that a water creature moves faster in water than a land creature
+		setUp();
+		hydrophile waterCreature = new hydrophile();
+		hydrophobe landCreature = new hydrophobe();
+		boolean inWater = false;
+		assertTrue(waterCreature.getWaterMovement(10, inWater) < landCreature.getWaterMovement(10, inWater));
 	}
 }
