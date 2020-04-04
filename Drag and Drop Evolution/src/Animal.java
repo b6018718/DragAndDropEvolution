@@ -574,7 +574,7 @@ public class Animal extends EnvironmentObject {
 //		}
 //	}
 	
-	private boolean collide(PVector collidePos, float deltaTime) {
+	public boolean collide(PVector collidePos, float deltaTime) {
 		if(hashGrid != null) {
 			return checkForCollisions(collidePos, null, deltaTime);
 		} else {
@@ -601,7 +601,7 @@ public class Animal extends EnvironmentObject {
 		for(EnvironmentObject obj : objectsInRange) {
 			if(obj instanceof Animal) {
 				Animal animal = (Animal)obj;				
-				if(animal.id != id) {
+				if(animal != this) {
 					if(collisionAABB(animal, collidePos)) {
 						eat(animal, hashGrid);
 						return false;
@@ -667,19 +667,17 @@ public class Animal extends EnvironmentObject {
 		BehaviourFood predatorType = predator.gene.species.behaveFood;
 		
 		if(predatorType.doesEatMeat() && prey.gene.species.speciesNumber != predator.gene.species.speciesNumber) {
-			if(preyType instanceof herbivorous || preyType instanceof omnivorous) {
-				predator.timeTillStarve += prey.width * 20000;
-				predator.eatenOnce = true;
-				if(predator.timeTillStarve > predator.startingTimeTillStarve) {
-					predator.timeTillStarve = predator.startingTimeTillStarve;
-					predator.movementSpeed = (float) predator.gene.speed;
-				}
-				prey.gene.species.animals.remove(prey);
-				if(hashGrid != null) {
-					hashGrid.remove(prey);
-				}
-				return true;
+			predator.timeTillStarve += prey.width * 20000;
+			predator.eatenOnce = true;
+			if(predator.timeTillStarve > predator.startingTimeTillStarve) {
+				predator.timeTillStarve = predator.startingTimeTillStarve;
+				predator.movementSpeed = (float) predator.gene.speed;
 			}
+			prey.gene.species.animals.remove(prey);
+			if(hashGrid != null) {
+				hashGrid.remove(prey);
+			}
+			return true;
 		}
 		return false;
 	}

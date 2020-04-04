@@ -1,9 +1,11 @@
+import org.gicentre.utils.geom.HashGrid;
 import org.junit.BeforeClass;
 import org.junit.jupiter.api.Test;
 
 import basicneuralnetwork.NeuralNetwork;
 import junit.framework.TestCase;
 import processing.core.PImage;
+import processing.core.PVector;
 
 class UnitTests extends TestCase{
 	// 21 Tests to Go!
@@ -47,6 +49,23 @@ class UnitTests extends TestCase{
 		BehaviourLifespan behaveLifespan = new longLife();
 		BehaviourWaterMovement behaveWaterMovement = new amphibious();
 		BehaviourFood behaveFood = new herbivorous();
+		BehaviourMutation behaveMutation = new mediumMutation();
+		String brainFilePath = "";
+		env.createSpecies(animalImage, filePath, name, behaveSpeed,
+				behaveSize, behaveLifespan, behaveWaterMovement,
+				behaveFood, behaveMutation, brainFilePath);
+	}
+	
+	public void createCarnivoreSpecies(Environment env) {
+		String filePath = "Animals/Rabbit.png";
+		//PImage animalImage = loadImage(filePath);
+		PImage animalImage = null;
+		String name = "Test Animal";
+		BehaviourSpeed behaveSpeed = new slow();
+		BehaviourSize behaveSize = new big();
+		BehaviourLifespan behaveLifespan = new longLife();
+		BehaviourWaterMovement behaveWaterMovement = new amphibious();
+		BehaviourFood behaveFood = new carnivorous();
 		BehaviourMutation behaveMutation = new mediumMutation();
 		String brainFilePath = "";
 		env.createSpecies(animalImage, filePath, name, behaveSpeed,
@@ -821,11 +840,693 @@ class UnitTests extends TestCase{
 	
 	@Test
 	void landCreatureMovesFasterOnLand() {
-		// TEST 68 Check that a water creature moves faster in water than a land creature
+		// TEST 68 Check that a water creature moves slower on land than a land creature
 		setUp();
 		hydrophile waterCreature = new hydrophile();
 		hydrophobe landCreature = new hydrophobe();
 		boolean inWater = false;
 		assertTrue(waterCreature.getWaterMovement(10, inWater) < landCreature.getWaterMovement(10, inWater));
+	}
+	
+	@Test
+	void slowBehaviourSlowerThanFastBehaviour() {
+		// TEST 69 Check that a fast behaviour moves faster than a slow behaviour
+		setUp();
+		fast fastCreature = new fast();
+		slow slowCreature = new slow();
+		int baseSpeed = 50;
+		assertTrue(slowCreature.getSpeed(baseSpeed) < fastCreature.getSpeed(baseSpeed));
+	}
+	
+	@Test
+	void smallBehaviourSmallerThanBigBehaviour() {
+		// TEST 70 Check that a small size behaviour is actually smaller than a big size behaviour
+		setUp();
+		small smallCreature = new small();
+		big bigCreature = new big();
+		int baseWidth = 20;
+		assertTrue(smallCreature.getSize(baseWidth) < bigCreature.getSize(baseWidth));
+	}
+	
+	@Test
+	void highPhysicalMutationRateIsHigherThanLow() {
+		// TEST 71 Check that a high physical mutation behaviour is actually larger than low physical mutation
+		setUp();
+		lowMutation low = new lowMutation();
+		highMutation high = new highMutation();
+		assertTrue(low.getPhysicalMutationRate() < high.getPhysicalMutationRate());
+	}
+	
+	@Test
+	void highMentalMutationRateIsHigherThanLow() {
+		// TEST 72 Check that a high mental mutation behaviour is actually larger than low physical mutation
+		setUp();
+		lowMutation low = new lowMutation();
+		highMutation high = new highMutation();
+		assertTrue(low.getBehaviourMutationRate() < high.getBehaviourMutationRate());
+	}
+	
+	@Test
+	void longLifeBehaviourIsLongerThanShortLife() {
+		// TEST 73 Check that the long life behaviour is actually longer than a short life behaviour
+		setUp();
+		longLife longLifespan = new longLife();
+		shortLife shortLifespan = new shortLife();
+		double baseLifespan = 10000;
+		assertTrue(shortLifespan.getLifespan(baseLifespan) < longLifespan.getLifespan(baseLifespan));
+	}
+	
+	@Test
+	void rectObjDimensionsAreCorrect() {
+		// TEST 74 Check that the dimensions of a rectangle object are correct
+		setUp();
+		RectObj testRect = new RectObj(10, 10, 2, 4);
+		assertTrue(testRect.topX == 12
+				&& testRect.topY == 14);
+	}
+	
+	@Test
+	void aabbCollisionBetweenPointAndAnimalSuccessful() {
+		// TEST 75 Check that an animal object and a point collide using aabb collision
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 2;
+		PVector point = new PVector(0, 0);
+		assertTrue(animalA.collisionAABB(animalA, point) == true);
+	}
+	
+	@Test
+	void aabbCollisionBetweenPointAndAnimalFailAbove() {
+		// TEST 76 Check that an animal object and a point don't collide when the point is above, using aabb collision
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 2;
+		PVector point = new PVector(0, -3);
+		assertTrue(animalA.collisionAABB(animalA, point) == false);
+	}
+	
+	@Test
+	void aabbCollisionBetweenPointAndAnimalFailBelow() {
+		// TEST 77 Check that an animal object and a point don't collide when the point is below, using aabb collision
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 2;
+		PVector point = new PVector(0, 3);
+		assertTrue(animalA.collisionAABB(animalA, point) == false);
+	}
+	
+	@Test
+	void aabbCollisionBetweenPointAndAnimalFailLeft() {
+		// TEST 78 Check that an animal object and a point don't collide when the point is to the left, using aabb collision
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 2;
+		PVector point = new PVector(-3, 0);
+		assertTrue(animalA.collisionAABB(animalA, point) == false);
+	}
+	
+	@Test
+	void aabbCollisionBetweenPointAndAnimalFailRight() {
+		// TEST 79 Check that an animal object and a point don't collide when the point is to the right, using aabb collision
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 2;
+		PVector point = new PVector(3, 0);
+		assertTrue(animalA.collisionAABB(animalA, point) == false);
+	}
+	
+	@Test
+	void startDyingPercentage() {
+		// TEST 80 Check that start dying percentage is a value between 0 and 1
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		assertTrue(animalA.startDyingPercentageOfLife >= 0
+				&& animalA.startDyingPercentageOfLife <= 1);
+	}
+	
+	@Test
+	void omnivoreToHerbivoreCollisionSuccess() {
+		// TEST 81 Check to see if two animal objects can collide and the herbivore is eaten
+		setUp();
+		createHerbivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		Animal animalB = env.speciesArray.get(1).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 2;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 1;
+		animalB.position.y = 1;
+		animalB.width = 1;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of herbivores before
+		int herbivoresBefore = env.speciesArray.get(1).animals.size();
+		animalA.collide(animalA.position, 0);
+		int herbivoresAfter = env.speciesArray.get(1).animals.size();
+		assertTrue(herbivoresAfter + 1 == herbivoresBefore);
+	}
+	
+	@Test
+	void omnivoreToHerbivoreCollisionFail() {
+		// TEST 82 Check to see if two animal objects can not eat each other if they do not collide
+		setUp();
+		createHerbivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		Animal animalB = env.speciesArray.get(1).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 2;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 10;
+		animalB.position.y = 10;
+		animalB.width = 1;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of herbivores before
+		int herbivoresBefore = env.speciesArray.get(1).animals.size();
+		animalA.collide(animalA.position, 0);
+		int herbivoresAfter = env.speciesArray.get(1).animals.size();
+		assertTrue(herbivoresAfter == herbivoresBefore);
+	}
+	
+	@Test
+	void animalDoesNotEatItsSelf() {
+		// TEST 83 Check to see if animals do not each them selves
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 10;
+		animalA.position.y = 10;
+		animalA.width = 2;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Get the number of animals before and after the collide function
+		int omnivoresBefore = env.speciesArray.get(0).animals.size();
+		animalA.collide(animalA.position, 0);
+		int omnivoresAfter = env.speciesArray.get(0).animals.size();
+		assertTrue(omnivoresBefore == omnivoresAfter);
+	}
+	
+	@Test
+	void omnivoreToFoodCollisionSuccess() {
+		// TEST 84 Check to see if omnivore and food objects can collide, omnivore eats the food
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 2;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Move food into position
+		Food food = env.foodArray.get(0);
+		food.position.x = 0;
+		food.position.y = 0;
+		food.width = 2;
+		// Add food into the grid so it can be detected by the collision
+		animalA.hashGrid.add(food);
+		// Get the amount of food before and after
+		int foodBefore = env.foodArray.size();
+		animalA.collide(animalA.position, 0);
+		int foodAfter = env.foodArray.size();
+		assertTrue(foodAfter + 1 == foodBefore);
+	}
+	
+	@Test
+	void omnivoreToFoodCollisionFail() {
+		// TEST 85 Check to see if omnivore and food objects can not collide, food is out of range of animal
+		setUp();
+		createHerbivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 2;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Move food into position
+		Food food = env.foodArray.get(0);
+		food.position.x = 10;
+		food.position.y = 10;
+		food.width = 2;
+		// Add food into the grid so it can be detected by the collision
+		animalA.hashGrid.add(food);
+		// Get the amount of food before and after
+		int foodBefore = env.foodArray.size();
+		animalA.collide(animalA.position, 0);
+		int foodAfter = env.foodArray.size();
+		assertTrue(foodAfter == foodBefore);
+	}
+	
+	@Test
+	void herbivoreToFoodCollisionSuccess() {
+		// TEST 86 Check to see if herbivore and food objects can collide, herbivore eats the food
+		setUp();
+		createHerbivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(1).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 2;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Move food into position
+		Food food = env.foodArray.get(0);
+		food.position.x = 0;
+		food.position.y = 0;
+		food.width = 2;
+		// Add food into the grid so it can be detected by the collision
+		animalA.hashGrid.add(food);
+		// Get the amount of food before and after
+		int foodBefore = env.foodArray.size();
+		animalA.collide(animalA.position, 0);
+		int foodAfter = env.foodArray.size();
+		assertTrue(foodAfter + 1 == foodBefore);
+	}
+	
+	@Test
+	void herbivoreToFoodCollisionFail() {
+		// TEST 87 Check to see if herbivore and food objects can not collide, food is out of range
+		setUp();
+		createHerbivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(1).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 2;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Move food into position
+		Food food = env.foodArray.get(0);
+		food.position.x = 10;
+		food.position.y = 10;
+		food.width = 2;
+		// Add food into the grid so it can be detected by the collision
+		animalA.hashGrid.add(food);
+		// Get the amount of food before and after
+		int foodBefore = env.foodArray.size();
+		animalA.collide(animalA.position, 0);
+		int foodAfter = env.foodArray.size();
+		assertTrue(foodAfter == foodBefore);
+	}
+	
+	@Test
+	void carnivoreToFoodCollisionFail() {
+		// TEST 88 Check to see if carnivore and food objects can collide and carnivore does not eat eat
+		setUp();
+		createCarnivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(1).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 2;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Move food into position
+		Food food = env.foodArray.get(0);
+		food.position.x = 0;
+		food.position.y = 0;
+		food.width = 2;
+		// Add food into the grid so it can be detected by the collision
+		animalA.hashGrid.add(food);
+		// Get the amount of food before and after
+		int foodBefore = env.foodArray.size();
+		animalA.collide(animalA.position, 0);
+		int foodAfter = env.foodArray.size();
+		assertTrue(foodAfter == foodBefore);
+	}
+	
+	@Test
+	void omnivoreToOmnivoreCollisionSuccess() {
+		// TEST 89 Check to see if two omnivore objects can collide and the smallest is eaten
+		setUp();
+		createOmnivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		Animal animalB = env.speciesArray.get(1).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 10;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 0;
+		animalB.position.y = 0;
+		animalB.width = 5;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of species B animals before and after
+		int speciesBBefore = env.speciesArray.get(1).animals.size();
+		animalA.collide(animalA.position, 0);
+		int speciesBAfter = env.speciesArray.get(1).animals.size();
+		assertTrue(speciesBAfter + 1 == speciesBBefore);
+	}
+	
+	@Test
+	void omnivoreToOmnivoreCollisionFail() {
+		// TEST 90 Check to see if two omnivore objects can not collide, neither is eaten
+		setUp();
+		createOmnivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		Animal animalB = env.speciesArray.get(1).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 10;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 45;
+		animalB.position.y = 32;
+		animalB.width = 5;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of herbivores before
+		int speciesABefore = env.speciesArray.get(0).animals.size();
+		int speciesBBefore = env.speciesArray.get(1).animals.size();
+		animalA.collide(animalA.position, 0);
+		int speciesAAfter = env.speciesArray.get(0).animals.size();
+		int speciesBAfter = env.speciesArray.get(1).animals.size();
+		assertTrue(speciesBAfter == speciesBBefore
+				&& speciesAAfter == speciesABefore);
+	}
+	
+	@Test
+	void carnivoreToHerbivoreCollisionSuccess() {
+		// TEST 91 Check to see if carnivore can eat herbivore when they collide
+		setUp();
+		createCarnivoreSpecies(env);
+		createHerbivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(1).animals.get(0);
+		Animal animalB = env.speciesArray.get(2).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 5;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 1;
+		animalB.position.y = 1;
+		animalB.width = 10;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of animals before and after
+		int carnivoresBefore = env.speciesArray.get(1).animals.size();
+		int herbivoresBefore = env.speciesArray.get(2).animals.size();
+		animalA.collide(animalA.position, 0);
+		int carnivoresAfter = env.speciesArray.get(1).animals.size();
+		int herbivoresAfter = env.speciesArray.get(2).animals.size();
+		assertTrue(herbivoresAfter + 1 == herbivoresBefore
+				&& carnivoresAfter == carnivoresBefore);
+	}
+	
+	@Test
+	void carnivoreToHerbivoreCollisionFail() {
+		// TEST 92 Check to see if carnivore can eat not herbivore if they don't collide
+		setUp();
+		createCarnivoreSpecies(env);
+		createHerbivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(1).animals.get(0);
+		Animal animalB = env.speciesArray.get(2).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 5;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 51;
+		animalB.position.y = 90;
+		animalB.width = 10;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of animals before and after
+		int carnivoresBefore = env.speciesArray.get(1).animals.size();
+		int herbivoresBefore = env.speciesArray.get(2).animals.size();
+		animalA.collide(animalA.position, 0);
+		int carnivoresAfter = env.speciesArray.get(1).animals.size();
+		int herbivoresAfter = env.speciesArray.get(2).animals.size();
+		assertTrue(herbivoresAfter == herbivoresBefore
+				&& carnivoresAfter == carnivoresBefore);
+	}
+	
+	@Test
+	void carnivoreToOmnivoreCollisionSuccess() {
+		// TEST 93 Check to see if carnivore can eat omnivore when they collide and they have a bigger width
+		setUp();
+		createCarnivoreSpecies(env);
+		createOmnivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(1).animals.get(0);
+		Animal animalB = env.speciesArray.get(2).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 15;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 1;
+		animalB.position.y = 1;
+		animalB.width = 10;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of animals before and after
+		int carnivoresBefore = env.speciesArray.get(1).animals.size();
+		int omnivoresBefore = env.speciesArray.get(2).animals.size();
+		animalA.collide(animalA.position, 0);
+		int carnivoresAfter = env.speciesArray.get(1).animals.size();
+		int omnivoresAfter = env.speciesArray.get(2).animals.size();
+		assertTrue(omnivoresAfter + 1 == omnivoresBefore
+				&& carnivoresAfter == carnivoresBefore);
+	}
+	
+	@Test
+	void omnivoreToCarnivoreCollisionSuccess() {
+		// TEST 94 Check to see if omnivore can eat a carnivore when they collide and the omnivore has a bigger width
+		setUp();
+		createCarnivoreSpecies(env);
+		createOmnivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(1).animals.get(0);
+		Animal animalB = env.speciesArray.get(2).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 7;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 1;
+		animalB.position.y = 1;
+		animalB.width = 15;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of animals before and after
+		int carnivoresBefore = env.speciesArray.get(2).animals.size();
+		int omnivoresBefore = env.speciesArray.get(1).animals.size();
+		animalB.collide(animalB.position, 0);
+		int carnivoresAfter = env.speciesArray.get(2).animals.size();
+		int omnivoresAfter = env.speciesArray.get(1).animals.size();
+		assertTrue(omnivoresAfter == omnivoresBefore
+				&& carnivoresAfter + 1 == carnivoresBefore);
+	}
+	
+	@Test
+	void omnivoreToCarnivoreCollisionFail() {
+		// TEST 95 Check to see if omnivore and carnivore do not eat each other if they do not collide
+		setUp();
+		createCarnivoreSpecies(env);
+		createOmnivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(1).animals.get(0);
+		Animal animalB = env.speciesArray.get(2).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 15;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 67;
+		animalB.position.y = 81;
+		animalB.width = 15;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of animals before and after
+		int carnivoresBefore = env.speciesArray.get(2).animals.size();
+		int omnivoresBefore = env.speciesArray.get(1).animals.size();
+		animalB.collide(animalB.position, 0);
+		int carnivoresAfter = env.speciesArray.get(2).animals.size();
+		int omnivoresAfter = env.speciesArray.get(1).animals.size();
+		assertTrue(omnivoresAfter == omnivoresBefore
+				&& carnivoresAfter == carnivoresBefore);
+	}
+	
+	@Test
+	void carnivoreToCarnivoreCollisionSuccess() {
+		// TEST 96 Check to see if carnivores can eat each other
+		setUp();
+		createCarnivoreSpecies(env);
+		createCarnivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(1).animals.get(0);
+		Animal animalB = env.speciesArray.get(2).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 6;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 0;
+		animalB.position.y = 0;
+		animalB.width = 5;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of animals before and after
+		int speciesABefore = env.speciesArray.get(1).animals.size();
+		int speciesBBefore = env.speciesArray.get(2).animals.size();
+		animalA.collide(animalA.position, 0);
+		int speciesAAfter = env.speciesArray.get(1).animals.size();
+		int speciesBAfter = env.speciesArray.get(2).animals.size();
+		assertTrue(speciesABefore == speciesAAfter
+				&& speciesBBefore - 1 == speciesBAfter);
+	}
+	
+	@Test
+	void carnivoreToCarnivoreCollisionFail() {
+		// TEST 97 Check to see if carnivores can not eat each other when they do not collide
+		setUp();
+		createCarnivoreSpecies(env);
+		createCarnivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(1).animals.get(0);
+		Animal animalB = env.speciesArray.get(2).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 6;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 10;
+		animalB.position.y = 10;
+		animalB.width = 6;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of animals before and after
+		int speciesABefore = env.speciesArray.get(1).animals.size();
+		int speciesBBefore = env.speciesArray.get(2).animals.size();
+		animalA.collide(animalA.position, 0);
+		int speciesAAfter = env.speciesArray.get(1).animals.size();
+		int speciesBAfter = env.speciesArray.get(2).animals.size();
+		assertTrue(speciesABefore == speciesAAfter
+				&& speciesBBefore == speciesBAfter);
+	}
+	
+	@Test
+	void herbivoreToCarnivoreCollision() {
+		// TEST 98 Check to see if herbivore cannot eat carnivore
+		setUp();
+		createHerbivoreSpecies(env);
+		createCarnivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(1).animals.get(0);
+		Animal animalB = env.speciesArray.get(2).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 6;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 10;
+		animalB.position.y = 10;
+		animalB.width = 6;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of animals before and after
+		int speciesABefore = env.speciesArray.get(1).animals.size();
+		int speciesBBefore = env.speciesArray.get(2).animals.size();
+		animalA.collide(animalA.position, 0);
+		int speciesAAfter = env.speciesArray.get(1).animals.size();
+		int speciesBAfter = env.speciesArray.get(2).animals.size();
+		assertTrue(speciesABefore == speciesAAfter
+				&& speciesBBefore == speciesBAfter);
+	}
+	
+	@Test
+	void herbivoreToOmnivoreCollision() {
+		// TEST 99 Check to see if herbivore cannot eat omnivore
+		setUp();
+		createHerbivoreSpecies(env);
+		createOmnivoreSpecies(env);
+		Animal animalA = env.speciesArray.get(1).animals.get(0);
+		Animal animalB = env.speciesArray.get(2).animals.get(0);
+		// Set animal A position
+		animalA.position.x = 0;
+		animalA.position.y = 0;
+		animalA.width = 6;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		// Set animal B position
+		animalB.position.x = 10;
+		animalB.position.y = 10;
+		animalB.width = 6;
+		// Add animal B into the grid so it can be detected by the collision
+		animalA.hashGrid.add(animalB);
+		// Get the number of animals before and after
+		int speciesABefore = env.speciesArray.get(1).animals.size();
+		int speciesBBefore = env.speciesArray.get(2).animals.size();
+		animalA.collide(animalA.position, 0);
+		int speciesAAfter = env.speciesArray.get(1).animals.size();
+		int speciesBAfter = env.speciesArray.get(2).animals.size();
+		assertTrue(speciesABefore == speciesAAfter
+				&& speciesBBefore == speciesBAfter);
+	}
+	
+	@Test
+	void animalCollisionWithWall() {
+		// TEST 100 Check to see if animal can collide with wall
+		setUp();
+		Animal animalA = env.speciesArray.get(0).animals.get(0);
+		animalA.width = 20;
+		animalA.distanceToWall = 19;
+		// Create a hash grid for multiple collisions
+		animalA.hashGrid = new HashGrid<EnvironmentObject>(100, 100, 10);
+		animalA.hashGrid.add(animalA);
+		assertTrue(animalA.collide(animalA.position, 0) == true);
 	}
 }
