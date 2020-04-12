@@ -261,6 +261,9 @@ public class UI {
 	public void loadBrainThread() {
 		brainFilePath = G4P.selectInput("Select where to load");
 		loadBrain.setEnabled(false);
+		loadBrain.setVisible(false);
+		GLabel loadText = new GLabel(pro ,loadBrain.getX(), loadBrain.getY(), loadBrain.getWidth(), loadBrain.getHeight(), "Loaded!");
+		animalPanelUi.addControl(loadText);
 	}
 	
 	public void saveBrainThread() {
@@ -501,7 +504,16 @@ public class UI {
 		// Set animal image
 		try {
 			if(image != null) {
+				for (GAbstractControl panelControl : panelControls) {
+					if(panelControl instanceof GImageButton) {
+						panelControl.dispose();
+						panelControl = null;
+					}
+				  }
+				
 				animalPanelImage = new GImageButton(pro, pro.width * 0.03f, pro.height * 0.05f, 36, 36, new String[] { filePath, filePath, filePath });
+				animalPanelImage.setVisible(true);
+				panelControls.add(animalPanelImage);
 				animalPanelUi.addControl(animalPanelImage);
 			}
 			filePath = filePath.substring(filePath.lastIndexOf('\\')+1);

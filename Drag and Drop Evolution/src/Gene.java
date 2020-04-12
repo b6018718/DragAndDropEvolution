@@ -18,7 +18,11 @@ public class Gene {
 	
 	public void generateRandomNetwork() {
 		if(species.brainFilePath != "" && species.globalSpeciesNumber < 20) {
-			neuralNetwork = NeuralNetwork.readFromFile(species.brainFilePath);
+			try {
+				neuralNetwork = NeuralNetwork.readFromFile(species.brainFilePath);
+			} catch(Exception e) {
+				neuralNetwork =  null;
+			}
 		}
 		
 		if(neuralNetwork == null) {

@@ -14,7 +14,7 @@ import g4p_controls.GImageToggleButton;
 import g4p_controls.GToggleControl;
 
 public class Main extends PApplet {
-	String versionNumber = "Alpha 2.3";
+	String versionNumber = "Alpha 2.5";
 	
 	// Screen dimensions
 	int scWidth;
@@ -107,7 +107,10 @@ public class Main extends PApplet {
 		int currentMillis = millis();
 		timer.update();
 		int lastLoopTime = currentMillis - lastMillis;
-		float deltaTime = getDeltaTime(lastLoopTime);
+		float deltaTime = getDeltaTime(lastLoopTime) * env.speedMultiplier;
+		
+		lastLoopTime = (int) (lastLoopTime * env.speedMultiplier);
+		
 		millisCount += lastLoopTime;
 		if(millisCount > saveDataPerMs) {
 			secondPassedFrame = true;

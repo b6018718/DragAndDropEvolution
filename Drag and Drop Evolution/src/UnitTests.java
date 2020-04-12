@@ -8,7 +8,6 @@ import processing.core.PImage;
 import processing.core.PVector;
 
 class UnitTests extends TestCase{
-	// 21 Tests to Go!
 	public static Environment env;
 	//ImageManager imageManager;
 	

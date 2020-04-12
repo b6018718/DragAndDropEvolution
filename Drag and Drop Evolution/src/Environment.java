@@ -144,8 +144,8 @@ public class Environment {
 			switched = true;
 		}
 			
-		deltaTime = deltaTime * speedMultiplier;
-		lastLoopTime = (int) (lastLoopTime * speedMultiplier);
+		//deltaTime = deltaTime * speedMultiplier;
+		//lastLoopTime = (int) (lastLoopTime * speedMultiplier);
 		//pro.stroke(0);
 		pro.fill(153, 255, 51, 190);
 		pro.noStroke();
