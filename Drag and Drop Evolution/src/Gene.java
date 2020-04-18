@@ -49,6 +49,10 @@ public class Gene {
 			//behaveWaterMove = new hydrophobe();
 			//behaveWaterMove = new amphibious();
 			
+			colour.r = (int) random(0, 255);
+			colour.g = (int) random(0,255);
+			colour.b = (int) random(0, 255);
+			
 			size = 12;
 			speed = 50;
 			lifeSpan = 60000;
@@ -94,16 +98,9 @@ public class Gene {
 	}
 	
 	private void mutateColor(Color parentColour) {
-		//double redShift = randomColourMutation();
-		//double greenShift = randomColourMutation();
-		//double blueShift = randomColourMutation();
-		
-		//colour.r = preventColourOverflow((int) (parentColour.r * redShift));
-		//colour.g = preventColourOverflow((int) (parentColour.g * greenShift));
-		//colour.b = preventColourOverflow((int) (parentColour.b * blueShift));
-		colour.r = (int) random(0, 255);
-		colour.g = (int) random(0,255);
-		colour.b = (int) random(0, 255);
+		colour.r = preventColourOverflow(applyMutation(parentColour.r));
+		colour.g = preventColourOverflow(applyMutation(parentColour.g));
+		colour.b = preventColourOverflow(applyMutation(parentColour.b));
 	}
 	
 	private double randomMutationChange() {
@@ -117,12 +114,12 @@ public class Gene {
 		return random((1-mutationRate) * colourShiftMultiplier, (1+mutationRate) * colourShiftMultiplier);
 	}
 	
-	private int preventColourOverflow(int colour) {
+	private int preventColourOverflow(double colour) {
 		if(colour < 0)
 			return 0;
 		if(colour > 255)
 			return 255;
-		return colour;
+		return (int) colour;
 	}
 	
 	private double applyMutation(double parentGenome) {

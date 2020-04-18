@@ -117,11 +117,8 @@ public class Animal extends EnvironmentObject {
 	}
 	
 	float calculateStarveTime() {
-		// y = x/12 and y = x/50, graphs for the starve time
 		float smallBonus = 12000 - 1000 * (this.width / 2);
 		float slowBonus = 50000 - 1000 * this.movementSpeed;
-		//float lifeSpanBonus = (float) ((60000 - gene.lifeSpan)/10); 
-		//float lifeSpanMultiplier = (float) (gene.lifeSpan/60000);
 		float lifeSpanBonus = (float) (gene.lifeSpan / 1000 * 67);
 		return 13000 + smallBonus + slowBonus + lifeSpanBonus;
 	}
