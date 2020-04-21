@@ -26,7 +26,7 @@ public class Gene {
 		}
 		
 		if(neuralNetwork == null) {
-			neuralNetwork =  new NeuralNetwork(5, 2, 5, 5);
+			neuralNetwork =  new NeuralNetwork(5, 2, 13, 5);
 		}
 	}
 	

@@ -104,7 +104,7 @@ public class UiNeuralNetwork {
 				for (int j = 0; j < hidden.get(i).size(); j++) {
 					//pro.fill((int) (inputColours[i] * 255));
 					pro.fill(255);
-					pro.circle(hidden.get(i).get(j).x, hidden.get(i).get(j).y, diameter);
+					pro.circle(hidden.get(i).get(j).x, hidden.get(i).get(j).y, (diameter / 2));
 				}
 			}
 			
